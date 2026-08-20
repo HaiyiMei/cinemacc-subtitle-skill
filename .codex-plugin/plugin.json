@@ -1,0 +1,35 @@
+{
+  "name": "cinemacc-subtitle-workflow",
+  "version": "0.1.0",
+  "description": "An auditable agent workflow for repairing, translating, and validating SRT subtitles.",
+  "author": {
+    "name": "CinemaCC",
+    "email": "haiyimei@gmail.com",
+    "url": "https://github.com/HaiyiMei"
+  },
+  "homepage": "https://cinemacc.net",
+  "repository": "https://github.com/HaiyiMei/cinemacc-subtitle-workflow",
+  "license": "MIT",
+  "keywords": [
+    "agent-skills",
+    "localization",
+    "srt",
+    "subtitles",
+    "translation"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "CinemaCC Subtitle Workflow",
+    "shortDescription": "Repair, translate, and QA SRT subtitles",
+    "longDescription": "Research title context, repair source tracks, translate for each locale, and validate SRT subtitles without silently changing cue timing.",
+    "developerName": "CinemaCC",
+    "category": "Creativity",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://cinemacc.net",
+    "defaultPrompt": [
+      "Repair and translate this SRT into natural Simplified and Traditional Chinese.",
+      "Inspect this subtitle file and report structural, textual, coverage, and timing risks.",
+      "Compare these SRT sources and identify which evidence is safe to reuse."
+    ]
+  }
+}
