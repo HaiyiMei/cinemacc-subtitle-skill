@@ -1,7 +1,7 @@
 {
   "name": "cinemacc-subtitle-skill",
-  "version": "0.1.0",
-  "description": "An auditable agent workflow for repairing, translating, and validating SRT subtitles.",
+  "version": "0.1.1",
+  "description": "An auditable agent skill for repairing, translating, and validating SRT subtitles.",
   "author": {
     "name": "CinemaCC",
     "email": "haiyimei@gmail.com",
@@ -19,7 +19,7 @@
   ],
   "skills": "./skills/",
   "interface": {
-    "displayName": "CinemaCC Subtitle Workflow",
+    "displayName": "CinemaCC Subtitle Skill",
     "shortDescription": "Repair, translate, and QA SRT subtitles",
     "longDescription": "Research title context, repair source tracks, translate for each locale, and validate SRT subtitles without silently changing cue timing.",
     "developerName": "CinemaCC",

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Small deterministic helpers for SRT subtitle translation workflows."""
+"""Small deterministic helpers for SRT subtitle translation tasks."""
 
 from __future__ import annotations
 
@@ -1452,7 +1452,7 @@ def validate(
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="SRT translation workflow helpers")
+    parser = argparse.ArgumentParser(description="SRT translation helpers")
     sub = parser.add_subparsers(dest="command", required=True)
 
     inspect_parser = sub.add_parser("inspect")

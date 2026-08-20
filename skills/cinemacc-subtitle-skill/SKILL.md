@@ -1,13 +1,13 @@
 ---
-name: cinemacc-subtitle-workflow
+name: cinemacc-subtitle-skill
 description: Research, repair, translate, QA, and deliver movie or TV SRT subtitles while preserving cue identity and timing. Use for poor source tracks, OCR/STT cleanup, context-aware translation, independent zh-CN/zh-TW localization, source comparison, SDH, glossaries, long-form chunking, or exact UTF-8 BOM/CRLF delivery.
 license: MIT
 metadata:
   author: CinemaCC
-  version: "0.1.0"
+  version: "0.1.1"
 ---
 
-# CinemaCC Subtitle Workflow
+# CinemaCC Subtitle Skill
 
 Produce a clean source-language track before translating it. Keep semantic decisions model-driven and structural operations deterministic.
 

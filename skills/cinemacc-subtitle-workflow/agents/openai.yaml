@@ -1,4 +1,0 @@
-interface:
-  display_name: "CinemaCC Subtitle Workflow"
-  short_description: "Research, refine, translate, and QA subtitles"
-  default_prompt: "Use $cinemacc-subtitle-workflow to research and refine this SRT, then create validated zh-CN and zh-TW subtitles without changing its timing."

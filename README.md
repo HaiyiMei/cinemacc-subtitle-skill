@@ -1,10 +1,10 @@
-# CinemaCC Subtitle Workflow
+# CinemaCC Subtitle Skill
 
 [![skills.sh](https://skills.sh/b/HaiyiMei/cinemacc-subtitle-skill)](https://skills.sh/HaiyiMei/cinemacc-subtitle-skill)
 
 An open, auditable Agent Skill for researching, repairing, translating, and validating movie or TV SRT subtitles without silently changing cue timing.
 
-The workflow keeps semantic decisions with the agent or human reviewer and delegates snapshots, hashes, source comparison, chunking, assembly, structural QA, and atomic delivery to a deterministic Python tool.
+The skill keeps semantic decisions with the agent or human reviewer and delegates snapshots, hashes, source comparison, chunking, assembly, structural QA, and atomic delivery to a deterministic Python tool.
 
 ## Install
 
@@ -17,7 +17,7 @@ npx skills add HaiyiMei/cinemacc-subtitle-skill
 In Codex, you can also ask the built-in installer:
 
 ```text
-$skill-installer install https://github.com/HaiyiMei/cinemacc-subtitle-skill/tree/main/skills/cinemacc-subtitle-workflow
+$skill-installer install https://github.com/HaiyiMei/cinemacc-subtitle-skill/tree/main/skills/cinemacc-subtitle-skill
 ```
 
 The repository also includes a minimal OpenAI skill-only plugin manifest for current ChatGPT and Codex distribution tooling.
@@ -25,10 +25,10 @@ The repository also includes a minimal OpenAI skill-only plugin manifest for cur
 ## Use
 
 ```text
-Use $cinemacc-subtitle-workflow to research and refine this SRT, then create validated zh-CN and zh-TW subtitles without changing its timing.
+Use $cinemacc-subtitle-skill to research and refine this SRT, then create validated zh-CN and zh-TW subtitles without changing its timing.
 ```
 
-By default, the workflow produces a refined source track plus independently localized Mainland Chinese (`zh-CN`) and Taiwan Chinese (`zh-TW`) tracks. Other target languages can be requested explicitly.
+By default, the skill produces a refined source track plus independently localized Mainland Chinese (`zh-CN`) and Taiwan Chinese (`zh-TW`) tracks. Other target languages can be requested explicitly.
 
 ## What it handles
 
@@ -45,7 +45,7 @@ By default, the workflow produces a refined source track plus independently loca
 ```text
 .
 ├── .codex-plugin/plugin.json
-└── skills/cinemacc-subtitle-workflow/
+└── skills/cinemacc-subtitle-skill/
     ├── SKILL.md
     ├── agents/openai.yaml
     ├── references/
@@ -63,7 +63,7 @@ The skill follows the [Agent Skills specification](https://agentskills.io/specif
 ## Verify
 
 ```bash
-python3 skills/cinemacc-subtitle-workflow/scripts/test_srt_tools.py
+python3 skills/cinemacc-subtitle-skill/scripts/test_srt_tools.py
 ```
 
 ## Privacy, cost, and rights
