@@ -1,6 +1,6 @@
 # CinemaCC Subtitle Workflow
 
-[![skills.sh](https://skills.sh/b/HaiyiMei/cinemacc-subtitle-workflow)](https://skills.sh/HaiyiMei/cinemacc-subtitle-workflow)
+[![skills.sh](https://skills.sh/b/HaiyiMei/cinemacc-subtitle-skill)](https://skills.sh/HaiyiMei/cinemacc-subtitle-skill)
 
 An open, auditable Agent Skill for researching, repairing, translating, and validating movie or TV SRT subtitles without silently changing cue timing.
 
@@ -11,13 +11,13 @@ The workflow keeps semantic decisions with the agent or human reviewer and deleg
 With the open Skills CLI:
 
 ```bash
-npx skills add HaiyiMei/cinemacc-subtitle-workflow
+npx skills add HaiyiMei/cinemacc-subtitle-skill
 ```
 
 In Codex, you can also ask the built-in installer:
 
 ```text
-$skill-installer install https://github.com/HaiyiMei/cinemacc-subtitle-workflow/tree/main/skills/cinemacc-subtitle-workflow
+$skill-installer install https://github.com/HaiyiMei/cinemacc-subtitle-skill/tree/main/skills/cinemacc-subtitle-workflow
 ```
 
 The repository also includes a minimal OpenAI skill-only plugin manifest for current ChatGPT and Codex distribution tooling.

@@ -1,5 +1,5 @@
 {
-  "name": "cinemacc-subtitle-workflow",
+  "name": "cinemacc-subtitle-skill",
   "version": "0.1.0",
   "description": "An auditable agent workflow for repairing, translating, and validating SRT subtitles.",
   "author": {
@@ -8,7 +8,7 @@
     "url": "https://github.com/HaiyiMei"
   },
   "homepage": "https://cinemacc.net",
-  "repository": "https://github.com/HaiyiMei/cinemacc-subtitle-workflow",
+  "repository": "https://github.com/HaiyiMei/cinemacc-subtitle-skill",
   "license": "MIT",
   "keywords": [
     "agent-skills",
