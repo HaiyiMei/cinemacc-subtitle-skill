@@ -8,19 +8,43 @@ The skill keeps semantic decisions with the agent or human reviewer and delegate
 
 ## Install
 
-With the open Skills CLI:
+The skill is a plain [Agent Skill](https://agentskills.io/specification), so any compatible agent can load
+it. Pick the path that matches your client.
+
+### Any agent, with the open skills CLI
 
 ```bash
 npx skills add HaiyiMei/cinemacc-subtitle-skill
 ```
 
-In Codex, you can also ask the built-in installer:
+The CLI detects the agents you have installed. Add `-a claude-code` (repeatable) to target specific ones,
+`-g` to install globally instead of into the current project.
+
+### Claude Code
+
+```text
+/plugin marketplace add HaiyiMei/cinemacc-subtitle-skill
+/plugin install cinemacc-subtitle-skill@cinemacc
+```
+
+### ChatGPT and Codex
 
 ```text
 $skill-installer install https://github.com/HaiyiMei/cinemacc-subtitle-skill/tree/main/skills/cinemacc-subtitle-skill
 ```
 
-The repository also includes a minimal OpenAI skill-only plugin manifest for current ChatGPT and Codex distribution tooling.
+### Other Agent Plugins clients
+
+The repository root is an [Agent Plugins 1.0.0](https://agent-plugins.org/specification) package: a
+`plugin.json` manifest plus a `skills/` directory. Clients that implement the standard - including VS Code,
+Cursor, GitHub Copilot, and Kiro - can install it directly from the repository. Follow your client's plugin
+installation instructions and point it at
+`https://github.com/HaiyiMei/cinemacc-subtitle-skill`.
+
+### Manually
+
+Copy `skills/cinemacc-subtitle-skill/` into your agent's skills directory, keeping the directory name
+intact. Nothing outside that directory is required at runtime.
 
 ## Use
 
@@ -44,15 +68,33 @@ By default, the skill produces a refined source track plus independently localiz
 
 ```text
 .
-├── .codex-plugin/plugin.json
+├── plugin.json                       # Agent Plugins 1.0.0 manifest (portable)
+├── .claude-plugin/
+│   ├── plugin.json                   # Claude Code plugin manifest
+│   └── marketplace.json              # Claude Code marketplace catalog
+├── .codex-plugin/plugin.json         # OpenAI ChatGPT/Codex plugin manifest
+├── tools/check_manifests.py          # keeps the manifests and SKILL.md in sync
 └── skills/cinemacc-subtitle-skill/
     ├── SKILL.md
-    ├── agents/openai.yaml
+    ├── agents/openai.yaml            # OpenAI-specific skill metadata
     ├── references/
     └── scripts/
 ```
 
-The skill follows the [Agent Skills specification](https://agentskills.io/specification). The plugin manifest is an additive OpenAI distribution wrapper; the skill remains installable by any compatible agent that understands `SKILL.md`.
+`skills/cinemacc-subtitle-skill/` is the whole skill. Every manifest at the repository root is an additive
+distribution wrapper for one client family; none of them changes the skill, and removing any one of them
+leaves the skill installable by every other client.
+
+## Compatibility
+
+| Client | Mechanism | Manifest used |
+| --- | --- | --- |
+| Claude Code | plugin marketplace | `.claude-plugin/marketplace.json`, `.claude-plugin/plugin.json` |
+| ChatGPT, Codex | plugin install / `$skill-installer` | `.codex-plugin/plugin.json` |
+| VS Code, Cursor, GitHub Copilot, Kiro, and other Agent Plugins clients | Agent Plugins package | `plugin.json` |
+| 75+ agents via the skills CLI | direct `skills/` discovery | none |
+
+The skill uses no MCP servers and no client-specific hooks, so the portable core is the same everywhere.
 
 ## Requirements
 
@@ -64,7 +106,12 @@ The skill follows the [Agent Skills specification](https://agentskills.io/specif
 
 ```bash
 python3 skills/cinemacc-subtitle-skill/scripts/test_srt_tools.py
+python3 tools/check_manifests.py
 ```
+
+The first command exercises the deterministic tooling. The second validates the `SKILL.md` frontmatter
+against the Agent Skills specification limits and checks that the skill name and version match every
+distribution manifest. Both run in CI on every push.
 
 ## Privacy, cost, and rights
 

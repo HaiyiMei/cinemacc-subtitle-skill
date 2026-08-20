@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "cinemacc-subtitle-skill",
+  "displayName": "CinemaCC Subtitle Skill",
+  "version": "0.2.0",
+  "description": "Research, repair, translate, and QA SRT subtitles without silently changing cue timing.",
+  "author": {
+    "name": "CinemaCC",
+    "email": "haiyimei@gmail.com",
+    "url": "https://github.com/HaiyiMei"
+  },
+  "homepage": "https://cinemacc.net",
+  "repository": "https://github.com/HaiyiMei/cinemacc-subtitle-skill",
+  "license": "MIT",
+  "keywords": [
+    "agent-skills",
+    "localization",
+    "srt",
+    "subtitles",
+    "translation"
+  ]
+}

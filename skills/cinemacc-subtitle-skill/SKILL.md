@@ -2,9 +2,10 @@
 name: cinemacc-subtitle-skill
 description: Research, repair, translate, QA, and deliver movie or TV SRT subtitles while preserving cue identity and timing. Use for poor source tracks, OCR/STT cleanup, context-aware translation, independent zh-CN/zh-TW localization, source comparison, SDH, glossaries, long-form chunking, or exact UTF-8 BOM/CRLF delivery.
 license: MIT
+compatibility: Requires Python 3.10+ (standard library only), an agent with local file read/write and shell access, and web access for title research unless the user opts out.
 metadata:
   author: CinemaCC
-  version: "0.1.1"
+  version: "0.2.0"
 ---
 
 # CinemaCC Subtitle Skill

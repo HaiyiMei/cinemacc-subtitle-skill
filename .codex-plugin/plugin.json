@@ -1,6 +1,6 @@
 {
   "name": "cinemacc-subtitle-skill",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "An auditable agent skill for repairing, translating, and validating SRT subtitles.",
   "author": {
     "name": "CinemaCC",
