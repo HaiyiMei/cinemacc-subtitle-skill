@@ -24,13 +24,13 @@ The CLI detects the agents you have installed. Add `-a claude-code` (repeatable)
 
 ```text
 /plugin marketplace add HaiyiMei/cinemacc-subtitle-skill
-/plugin install cinemacc-subtitle-skill@cinemacc
+/plugin install cinemacc-subtitle@cinemacc
 ```
 
 ### ChatGPT and Codex
 
 ```text
-$skill-installer install https://github.com/HaiyiMei/cinemacc-subtitle-skill/tree/main/skills/cinemacc-subtitle-skill
+$skill-installer install https://github.com/HaiyiMei/cinemacc-subtitle-skill/tree/main/skills/cinemacc-subtitle
 ```
 
 ### Other Agent Plugins clients
@@ -43,13 +43,13 @@ installation instructions and point it at
 
 ### Manually
 
-Copy `skills/cinemacc-subtitle-skill/` into your agent's skills directory, keeping the directory name
+Copy `skills/cinemacc-subtitle/` into your agent's skills directory, keeping the directory name
 intact. Nothing outside that directory is required at runtime.
 
 ## Use
 
 ```text
-Use $cinemacc-subtitle-skill to research and refine this SRT, then create validated zh-CN and zh-TW subtitles without changing its timing.
+Use $cinemacc-subtitle to research and refine this SRT, then create validated zh-CN and zh-TW subtitles without changing its timing.
 ```
 
 By default, the skill produces a refined source track plus independently localized Mainland Chinese (`zh-CN`) and Taiwan Chinese (`zh-TW`) tracks. Other target languages can be requested explicitly.
@@ -74,14 +74,14 @@ By default, the skill produces a refined source track plus independently localiz
 │   └── marketplace.json              # Claude Code marketplace catalog
 ├── .codex-plugin/plugin.json         # OpenAI ChatGPT/Codex plugin manifest
 ├── tools/check_manifests.py          # keeps the manifests and SKILL.md in sync
-└── skills/cinemacc-subtitle-skill/
+└── skills/cinemacc-subtitle/
     ├── SKILL.md
     ├── agents/openai.yaml            # OpenAI-specific skill metadata
     ├── references/
     └── scripts/
 ```
 
-`skills/cinemacc-subtitle-skill/` is the whole skill. Every manifest at the repository root is an additive
+`skills/cinemacc-subtitle/` is the whole skill. Every manifest at the repository root is an additive
 distribution wrapper for one client family; none of them changes the skill, and removing any one of them
 leaves the skill installable by every other client.
 
@@ -105,7 +105,7 @@ The skill uses no MCP servers and no client-specific hooks, so the portable core
 ## Verify
 
 ```bash
-python3 skills/cinemacc-subtitle-skill/scripts/test_srt_tools.py
+python3 skills/cinemacc-subtitle/scripts/test_srt_tools.py
 python3 tools/check_manifests.py
 ```
 

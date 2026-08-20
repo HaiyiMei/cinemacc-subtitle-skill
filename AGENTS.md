@@ -1,14 +1,14 @@
 # Repository guide for agents
 
 This repository publishes a single Agent Skill through several distribution manifests. Nothing here is
-application code; treat `skills/cinemacc-subtitle-skill/` as the product and everything else as packaging.
+application code; treat `skills/cinemacc-subtitle/` as the product and everything else as packaging.
 
 ## Layout
 
-- `skills/cinemacc-subtitle-skill/SKILL.md` - the skill itself. Authoritative for `name` and, through
+- `skills/cinemacc-subtitle/SKILL.md` - the skill itself. Authoritative for `name` and, through
   `metadata.version`, for the release version.
-- `skills/cinemacc-subtitle-skill/references/` - loaded on demand by the skill; keep each file focused.
-- `skills/cinemacc-subtitle-skill/scripts/srt_tools.py` - deterministic tooling. Standard library only,
+- `skills/cinemacc-subtitle/references/` - loaded on demand by the skill; keep each file focused.
+- `skills/cinemacc-subtitle/scripts/srt_tools.py` - deterministic tooling. Standard library only,
   Python 3.10+. It must never call a translation service or rewrite subtitle meaning.
 - `plugin.json` - portable Agent Plugins manifest. Closed schema: only the fields the spec permits.
 - `.claude-plugin/` - Claude Code plugin and marketplace manifests.
@@ -18,7 +18,7 @@ application code; treat `skills/cinemacc-subtitle-skill/` as the product and eve
 ## Before committing
 
 ```bash
-python3 skills/cinemacc-subtitle-skill/scripts/test_srt_tools.py
+python3 skills/cinemacc-subtitle/scripts/test_srt_tools.py
 python3 tools/check_manifests.py
 ```
 

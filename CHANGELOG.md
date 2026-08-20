@@ -21,6 +21,10 @@ All notable changes to this repository are documented here. The project follows
 
 ### Changed
 
+- Renamed the skill and the plugin from `cinemacc-subtitle-skill` to `cinemacc-subtitle`. The `-skill`
+  suffix was redundant everywhere the identifier is actually typed (`$cinemacc-subtitle`,
+  `/plugin install cinemacc-subtitle@cinemacc`). The repository name is unchanged, so existing
+  `npx skills add HaiyiMei/cinemacc-subtitle-skill` commands and the skills.sh listing still resolve.
 - Documented per-client installation in the README instead of assuming the OpenAI distribution path.
 
 ## [0.1.1] - 2026-08-20
