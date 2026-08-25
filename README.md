@@ -61,6 +61,7 @@ By default, the skill produces a refined source track plus independently localiz
 - subtitle-source provenance and timing-family comparison;
 - resumable workbooks, glossaries, uncertainties, and narrow QA waivers;
 - deterministic cue, timestamp, formatting-tag, encoding, and newline checks;
+- audited pruning and sequential renumbering of confirmed non-program cue residue;
 - safe chunk splitting and merging for long subtitles;
 - atomic delivery with hashes and receipts.
 

@@ -4,7 +4,7 @@
 
 Before assigning the source tag or assembling outputs, record the claimed language, observed language, and coverage classification (`full`, `partial`, or `unverified`). Evidence must include representative cue samples and, when a reliable runtime is available, the final-cue-to-runtime comparison.
 
-A mislabeled or partial source can still be useful as evidence, but it is not an eligible base for a deliverable advertised as a complete track in another language. Do not manufacture an “English source” from a different-language subtitle merely because English was requested. Either locate a timing-compatible English track, or, with explicit user approval, translate the actual source language straight into the requested target and label the result honestly.
+A mislabeled or partial source can still be useful as evidence, but it is not an eligible base for a deliverable advertised as a complete track in another language. Do not manufacture an "English source" from a different-language subtitle merely because English was requested. Either locate a timing-compatible English track, or, with explicit user approval, translate the actual source language straight into the requested target and label the result honestly.
 
 ## Default outputs
 
@@ -41,13 +41,15 @@ Use glossary columns `source`, the source tag, target tags, and `notes`. The QA 
 
 ## Non-film cue policy
 
-Keep the cue identity and choose text deliberately:
+Decide whether a cue is program content before choosing text:
 
 1. Preserve verified film dialogue, SDH, or on-screen text.
-2. Remove clear uploader promotion, betting advertisements, URLs, and repeated source-family interstitials.
-3. Replace a contaminated cue with a verified on-screen card when audiovisual or independent evidence supports that card.
-4. When the user explicitly prefers a localized official film title in a contaminated cue, use the territory-appropriate title and record it as an editorial substitution.
-5. Otherwise use a neutral ellipsis and document the coverage gap.
+2. Before `init-job`, prune a confirmed contiguous run of uploader promotion, betting advertisements, URLs, blank fragments, or punctuation-only source-family residue with `prune-cues`. Review the selection semantically; appearance alone is not proof that a cue is non-program.
+3. Let `prune-cues` preserve the original input, retain the timestamps and bodies of every kept block, renumber the viewing source sequentially, and write its required audit map. Initialize the job from that cleaned source.
+4. For an isolated contaminated cue that may occupy genuine program time, keep its identity and timing window while removing the promotional text.
+5. Replace such a retained cue with a verified on-screen card when audiovisual or independent evidence supports that card.
+6. When the user explicitly prefers a localized official film title in a retained contaminated cue, use the territory-appropriate title and record it as an editorial substitution.
+7. Otherwise use one neutral ellipsis and document the coverage gap. Never create a run of ellipses for blocks already confirmed to be non-program residue.
 
 Never reconstruct overwritten dialogue from a translated derivative alone.
 

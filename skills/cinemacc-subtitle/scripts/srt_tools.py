@@ -54,6 +54,7 @@ ENGLISH_SDH_RE = re.compile(
     r"|[A-Za-z][A-Za-z .'-]{1,24}:"
     r")"
 )
+ELLIPSIS_ONLY_RE = re.compile(r"^(?:\.{2,}|…+|⋯+)$")
 
 
 def sha256_file(path: Path) -> str:
@@ -72,6 +73,29 @@ def normalized_cue_text(lines: list[str]) -> str:
 def normalized_track_hash(cues: list[tuple[int, str, list[str]]]) -> str:
     text = "\n".join(normalized_cue_text(lines) for _, _, lines in cues)
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def ellipsis_only_runs(
+    cues: list[tuple[int, str, list[str]]], minimum: int = 3
+) -> list[tuple[int, int, int]]:
+    """Return runs of placeholder-only cue bodies as (first, last, count)."""
+
+    runs: list[tuple[int, int, int]] = []
+    start_index: int | None = None
+    for index, (_, _, body) in enumerate(cues):
+        visible = TAG_RE.sub("", "".join(body)).strip()
+        placeholder = bool(ELLIPSIS_ONLY_RE.fullmatch(visible))
+        if placeholder and start_index is None:
+            start_index = index
+        if placeholder and index + 1 < len(cues):
+            continue
+        if start_index is not None:
+            end_index = index if placeholder else index - 1
+            count = end_index - start_index + 1
+            if count >= minimum:
+                runs.append((cues[start_index][0], cues[end_index][0], count))
+            start_index = None
+    return runs
 
 
 def encode_workbook_cell(value: str) -> str:
@@ -241,6 +265,7 @@ def inspect(path: Path) -> int:
         f"sequential: {[n for n, _, _ in cues] == list(range(cues[0][0], cues[-1][0] + 1))}"
     )
     print(f"blank_cues: {blank}")
+    print(f"ellipsis_only_runs: {ellipsis_only_runs(cues)}")
     print(f"starts_ms: {intervals[0][0]}")
     print(f"ends_ms: {intervals[-1][1]}")
     print(f"overlap_pair_count: {len(overlaps)}")
@@ -270,6 +295,113 @@ def split(path: Path, out_dir: Path, size: int, suffix: str) -> int:
     print(
         f"wrote {((len(cues) + size - 1) // size) if cues else 0} chunks to {out_dir}"
     )
+    return 0
+
+
+def parse_block_selection(values: list[str], cue_count: int) -> set[int]:
+    """Parse 1-based SRT block positions such as ``2-21,25``."""
+
+    selected: set[int] = set()
+    for value in values:
+        for raw_token in value.split(","):
+            token = raw_token.strip()
+            if not token:
+                raise ValueError("empty block selector")
+            match = re.fullmatch(r"(\d+)(?:-(\d+))?", token)
+            if not match:
+                raise ValueError(f"invalid block selector: {token!r}")
+            first = int(match.group(1))
+            last = int(match.group(2) or first)
+            if first < 1 or last < first or last > cue_count:
+                raise ValueError(
+                    f"block selector {token!r} is outside 1-{cue_count}"
+                )
+            selected.update(range(first, last + 1))
+    if not selected:
+        raise ValueError("at least one block must be selected")
+    return selected
+
+
+def prune_cues(
+    source: Path,
+    output: Path,
+    drop_blocks: list[str],
+    audit: Path,
+    reason: str,
+    overwrite: bool = False,
+) -> int:
+    """Drop reviewed non-program blocks, renumber, and write an audit map."""
+
+    if not source.is_file():
+        raise ValueError(f"source SRT does not exist: {source}")
+    if source.resolve() == output.resolve():
+        raise ValueError(
+            "output must differ from source so the original stays unchanged"
+        )
+    if source.resolve() == audit.resolve():
+        raise ValueError(
+            "audit must differ from source so the original stays unchanged"
+        )
+    if output.resolve() == audit.resolve():
+        raise ValueError("output SRT and audit JSON must use different paths")
+    if not reason.strip():
+        raise ValueError("--reason must explain why the selected blocks are non-program")
+    for path in (output, audit):
+        if path.exists() and not overwrite:
+            raise ValueError(
+                f"output already exists: {path}; pass --overwrite to replace it"
+            )
+
+    cues = parse_srt(source)
+    if not cues:
+        raise ValueError("cannot prune an empty SRT")
+    selected = parse_block_selection(drop_blocks, len(cues))
+    if len(selected) == len(cues):
+        raise ValueError("refusing to drop every cue")
+
+    retained: list[tuple[int, str, list[str]]] = []
+    mapping: list[dict[str, Any]] = []
+    output_number = 1
+    for block, (source_number, timestamp, body) in enumerate(cues, start=1):
+        dropped = block in selected
+        mapped_number = None if dropped else output_number
+        mapping.append(
+            {
+                "source_block": block,
+                "source_number": source_number,
+                "timestamp": timestamp,
+                "action": "dropped" if dropped else "retained",
+                "output_number": mapped_number,
+            }
+        )
+        if dropped:
+            continue
+        retained.append((output_number, timestamp, body))
+        output_number += 1
+
+    write_srt(output, retained, crlf=True, bom=True)
+    audit.parent.mkdir(parents=True, exist_ok=True)
+    audit.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "source_sha256": sha256_file(source),
+                "output_sha256": sha256_file(output),
+                "reason": reason.strip(),
+                "source_cue_count": len(cues),
+                "output_cue_count": len(retained),
+                "dropped_blocks": sorted(selected),
+                "mapping": mapping,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    print(f"pruned {len(selected)} blocks: {len(cues)} -> {len(retained)} cues")
+    print(f"output: {output}")
+    print(f"audit: {audit}")
     return 0
 
 
@@ -1224,6 +1356,17 @@ def qa(
                     }
                 )
 
+    for first_cue, last_cue, count in ellipsis_only_runs(target_cues):
+        warnings.append(
+            {
+                "kind": "ellipsis_run",
+                "cue": first_cue,
+                "end_cue": last_cue,
+                "count": count,
+                "message": "three or more consecutive cues contain only ellipses",
+            }
+        )
+
     for warning in warnings:
         cue = warning.get("cue")
         if not isinstance(cue, int):
@@ -1464,6 +1607,19 @@ def main(argv: list[str] | None = None) -> int:
     split_parser.add_argument("--size", type=int, default=120)
     split_parser.add_argument("--suffix", default="en")
 
+    prune_parser = sub.add_parser("prune-cues")
+    prune_parser.add_argument("source", type=Path)
+    prune_parser.add_argument("output", type=Path)
+    prune_parser.add_argument(
+        "--drop-blocks",
+        action="append",
+        required=True,
+        help="1-based SRT block positions, for example 2-21 or 2-21,25",
+    )
+    prune_parser.add_argument("--audit", type=Path, required=True)
+    prune_parser.add_argument("--reason", required=True)
+    prune_parser.add_argument("--overwrite", action="store_true")
+
     init_job_parser = sub.add_parser("init-job")
     init_job_parser.add_argument("source", type=Path)
     init_job_parser.add_argument("work_dir", type=Path)
@@ -1553,6 +1709,15 @@ def main(argv: list[str] | None = None) -> int:
             return inspect(args.path)
         if args.command == "split":
             return split(args.path, args.out_dir, args.size, args.suffix)
+        if args.command == "prune-cues":
+            return prune_cues(
+                args.source,
+                args.output,
+                args.drop_blocks,
+                args.audit,
+                args.reason,
+                args.overwrite,
+            )
         if args.command == "init-job":
             return init_job(
                 args.source,

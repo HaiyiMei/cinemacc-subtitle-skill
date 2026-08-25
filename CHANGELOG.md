@@ -4,6 +4,26 @@ All notable changes to this repository are documented here. The project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The version in
 `SKILL.md` (`metadata.version`) is authoritative; every plugin manifest mirrors it.
 
+## [0.4.0] - 2026-08-25
+
+### Added
+
+- `prune-cues`, a deterministic command that removes reviewed non-program SRT blocks by unambiguous
+  block position, preserves every retained timestamp and body, renumbers the viewing track, and writes a
+  hash-backed original-to-output audit map.
+- Inspection and strict-QA detection for runs of three or more ellipsis-only cues.
+- Tests covering malformed source numbering, empty and punctuation-only residue, renumbering, source
+  preservation, invalid selections, missing reasons, and protection against dropping an entire track.
+
+### Changed
+
+- The workflow now inspects and, when justified, prunes confirmed uploader-credit or advertising
+  fragments before initializing a translation job.
+- Neutral ellipses are limited to isolated contaminated cues that may occupy genuine program time. The
+  skill explicitly forbids filling a confirmed non-program run with repeated placeholders.
+- Runtime requirements moved from the optional `compatibility` frontmatter field into the skill body so
+  the same package passes both portable Agent Skills and current ChatGPT/Codex validation.
+
 ## [0.3.0] - 2026-08-25
 
 ### Added
@@ -14,7 +34,7 @@ All notable changes to this repository are documented here. The project follows
 ### Changed
 
 - Prohibits presenting a mislabeled or partial track as the requested source-language deliverable. An unexpected-language track may be translated directly only with explicit user approval and clear coverage disclosure.
-- Clarifies that a complete requested-language track with the user’s timing skeleton takes priority over a visually better but incompatible release.
+- Clarifies that a complete requested-language track with the user's timing skeleton takes priority over a visually better but incompatible release.
 
 ## [0.2.0] - 2026-08-20
 

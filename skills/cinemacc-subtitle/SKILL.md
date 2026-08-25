@@ -1,16 +1,17 @@
 ---
 name: cinemacc-subtitle
-description: Research, repair, translate, QA, and deliver movie or TV SRT subtitles while preserving cue identity and timing. Use for poor source tracks, OCR/STT cleanup, context-aware translation, independent zh-CN/zh-TW localization, source comparison, SDH, glossaries, long-form chunking, or exact UTF-8 BOM/CRLF delivery.
+description: Research, diagnose, prune confirmed non-program residue, repair, translate, QA, and deliver movie or TV SRT subtitles while preserving program-content cue timing. Use for poor source tracks, blank or placeholder runs, uploader or watermark fragments, OCR/STT cleanup, context-aware translation, independent zh-CN/zh-TW localization, source comparison, SDH, glossaries, long-form chunking, or exact UTF-8 BOM/CRLF delivery.
 license: MIT
-compatibility: Requires Python 3.10+ (standard library only), an agent with local file read/write and shell access, and web access for title research unless the user opts out.
 metadata:
   author: CinemaCC
-  version: "0.3.0"
+  version: "0.4.0"
 ---
 
 # CinemaCC Subtitle Skill
 
 Produce a clean source-language track before translating it. Keep semantic decisions model-driven and structural operations deterministic.
+
+Require Python 3.10 or newer, local file read/write and shell access, and web access for title research unless the user opts out. The deterministic tool uses only the Python standard library.
 
 Resolve `scripts/srt_tools.py` from this skill directory and reuse that absolute path as `TOOL`. Read [references/job-format-and-profiles.md](references/job-format-and-profiles.md) when creating a job, translating Chinese, handling contaminated cues, recording QA waivers, or delivering files. Read [references/release-provenance-and-trust.md](references/release-provenance-and-trust.md) when comparing candidate releases, interpreting release names, assessing uploaders or credits, or deciding whether a subtitle is official, transcribed, OCR-derived, or machine-translated.
 
@@ -18,17 +19,11 @@ Resolve `scripts/srt_tools.py` from this skill directory and reuse that absolute
 
 1. Record the input path, claimed source language, requested output directory, and naming convention. Treat the claimed language as unverified until inspection samples confirm it.
 2. Default Chinese work to both `zh-CN` and `zh-TW`. Treat them as independently reviewed Mainland and Taiwan localizations, not mechanical script variants.
-3. Default to text repair only. Preserve every cue number, timestamp, and formatting-tag sequence. Require explicit authorization and matched audiovisual evidence for retiming, cue merges/splits, or positioning changes.
+3. Default to text repair only. Preserve every program-content cue, timestamp, and formatting-tag sequence. Require explicit authorization and matched audiovisual evidence for retiming, cue merges/splits, or positioning changes. Treat confirmed non-program residue under the audited pruning policy below, never as dialogue placeholders.
 4. Preserve original inputs. Write generated work into a portable job directory and deliver only named outputs.
 5. Do not use external machine-translation services unless the user explicitly requests one.
 
-Initialize a resumable job:
-
-```bash
-python3 "$TOOL" init-job input.srt work/subtitle-job --source-tag en
-```
-
-This snapshots the source, records its hash, and creates a workbook with default `zh-CN` and `zh-TW` columns. Repeat `--target <tag>` to override the default targets. Use `--stem` when the user's naming contract requires it. Keep `--output-dir` job-relative; it changes only the staging subdirectory, while `deliver-job` selects the external destination.
+Do not initialize a job until the initial inspection and any audited source pruning are complete.
 
 ## Inspect and diagnose
 
@@ -38,7 +33,7 @@ Run:
 python3 "$TOOL" inspect input.srt
 ```
 
-Confirm encoding, newline style, cue count and sequence, duration, overlaps, gaps, blank bodies, tags, speaker labels, and SDH style. Sample the beginning, middle, and end. Scan for uploader credits, betting ads, URLs, repeated interstitials, OCR/STT artifacts, improbable words, inconsistent names, and suspicious line breaks.
+Confirm encoding, newline style, cue count and sequence, duration, overlaps, gaps, blank bodies, tags, speaker labels, and SDH style. Sample the beginning, middle, and end. Scan for uploader credits, betting ads, URLs, repeated interstitials, OCR/STT artifacts, improbable words, inconsistent names, suspicious line breaks, and contiguous runs of ultra-short blank or punctuation-only cues that may be fragments of an animated watermark or credit.
 
 Before initializing translation, pass the source-eligibility gate:
 
@@ -48,6 +43,29 @@ Before initializing translation, pass the source-eligibility gate:
 - if the track is in an unexpected language or is partial, do not present it as the requested source-language track or silently reconstruct one. Find a compatible track in the requested language, or obtain explicit permission to translate the track in its actual language directly to the requested target and disclose the coverage limit.
 
 Classify each problem as structural, textual, coverage, or timing. Do not claim that text refinement fixes missing dialogue or bad timing.
+
+## Prune confirmed non-program residue
+
+Do not turn a confirmed run of uploader credits, advertising animation fragments, empty bodies, or punctuation-only source residue into repeated ellipses. First verify that the selected blocks contain no film or episode dialogue, SDH, or story-relevant on-screen text. Blank or short bodies alone are not sufficient evidence. If uncertain, retain the blocks and record the uncertainty.
+
+Use 1-based block positions so malformed, duplicate, or out-of-order source cue numbers cannot make the selection ambiguous:
+
+```bash
+python3 "$TOOL" prune-cues input.srt cleaned.srt \
+  --drop-blocks 2-21 \
+  --reason "Reviewed fragments of an uploader credit animation before program content." \
+  --audit work/prune-audit.json
+```
+
+The command preserves the original file, removes only the selected blocks, retains every remaining body and timestamp, renumbers the viewing track from 1, and records the original-to-output mapping plus hashes. Use the cleaned track as the job source. Use a neutral ellipsis only for an isolated contaminated cue that may occupy genuine program time and cannot be restored, never to preserve a confirmed non-program sequence.
+
+Initialize a resumable job after this decision:
+
+```bash
+python3 "$TOOL" init-job cleaned.srt work/subtitle-job --source-tag en
+```
+
+This snapshots the cleaned source, records its hash, and creates a workbook with default `zh-CN` and `zh-TW` columns. Repeat `--target <tag>` to override the default targets. Use `--stem` when the user's naming contract requires it. Keep `--output-dir` job-relative; it changes only the staging subdirectory, while `deliver-job` selects the external destination.
 
 ## Research the title
 
@@ -63,7 +81,7 @@ Build a compact context pack with scene order, character identities and relation
 
 ## Classify additional subtitle sources
 
-Treat every release-name source label as an unverified claim and classify its provenance using the release-provenance reference. Compare every candidate before using it. Create a small decision matrix containing observed language, coverage, timing family, textual provenance, and release-name claims. Prefer a full track in the requested source language that matches the user’s timing skeleton over a higher-quality but incompatible release:
+Treat every release-name source label as an unverified claim and classify its provenance using the release-provenance reference. Compare every candidate before using it. Create a small decision matrix containing observed language, coverage, timing family, textual provenance, and release-name claims. Prefer a full track in the requested source language that matches the user's timing skeleton over a higher-quality but incompatible release:
 
 ```bash
 python3 "$TOOL" compare-sources input.srt independent.srt \
@@ -90,7 +108,7 @@ Work cue by cue with neighboring context:
 - never invent inaudible dialogue or restore overwritten dialogue from a translated derivative alone;
 - record low-confidence readings in `uncertainties.jsonl`, not in viewing text.
 
-Apply the non-film cue policy in the job-format reference. In particular, remove clear uploader or betting promotion while retaining the timing skeleton. Use an official localized title in that cue only when supported by the image or explicitly requested by the user, and document editorial substitutions.
+Apply the non-film cue policy in the job-format reference. Prune confirmed non-program residue before job initialization instead of filling it with placeholders. For an isolated contaminated cue that must remain, remove clear uploader or betting promotion while retaining its timing window. Use an official localized title in that cue only when supported by the image or explicitly requested by the user, and document editorial substitutions.
 
 Do not start translation until the refined source passes structural checks and a named-entity consistency pass. Generate a changed-cue audit with correctly typed evidence:
 
@@ -155,7 +173,7 @@ python3 "$TOOL" qa refined.en.srt movie.zh-TW.srt \
   --waivers work/subtitle-job/qa-waivers.jsonl --strict --report qa-zh-TW.json
 ```
 
-Pass project-specific Latin tokens with repeated `--allowed-latin`. Fix every structural error. Resolve every warning or record a narrow waiver with a reason; never waive an entire category globally. Review the beginning, middle, end, chunk boundaries, named-entity scenes, contaminated cues, and every uncertainty.
+Pass project-specific Latin tokens with repeated `--allowed-latin`. Fix every structural error. Resolve every warning, including `ellipsis_run`, or record a narrow waiver with a reason; never waive an entire category globally. Review the beginning, middle, end, chunk boundaries, named-entity scenes, contaminated cues, every uncertainty, and any repeated placeholder run. A viewing track must not contain a sequence of ellipses introduced solely to preserve confirmed non-program blocks.
 
 `validate` is structural by default. Use `--scan-untranslated-english-sdh` only on a non-English translated target; never enable that scan for the refined English track.
 
@@ -171,4 +189,4 @@ Use `--overwrite` only after confirming the exact existing targets. Validate the
 
 ## Deterministic boundary
 
-Use `srt_tools.py` for snapshots, hashes, source comparison, workbook splitting/merging, assembly, structural validation, QA reports, atomic delivery, and receipts. Keep research, evidence evaluation, dialogue repair, translation, and waiver judgment in the model or human review. Never add a script that calls a translation service or silently rewrites subtitle meaning.
+Use `srt_tools.py` for audited cue pruning and renumbering, snapshots, hashes, source comparison, workbook splitting/merging, assembly, structural validation, QA reports, atomic delivery, and receipts. Keep the decision that blocks are non-program, research, evidence evaluation, dialogue repair, translation, and waiver judgment in the model or human review. Never add a script that calls a translation service or silently rewrites subtitle meaning.
