@@ -5,7 +5,7 @@ license: MIT
 compatibility: Requires Python 3.10+ (standard library only), an agent with local file read/write and shell access, and web access for title research unless the user opts out.
 metadata:
   author: CinemaCC
-  version: "0.2.0"
+  version: "0.3.0"
 ---
 
 # CinemaCC Subtitle Skill
@@ -16,7 +16,7 @@ Resolve `scripts/srt_tools.py` from this skill directory and reuse that absolute
 
 ## Establish the contract
 
-1. Record the input path, source language, requested output directory, and naming convention.
+1. Record the input path, claimed source language, requested output directory, and naming convention. Treat the claimed language as unverified until inspection samples confirm it.
 2. Default Chinese work to both `zh-CN` and `zh-TW`. Treat them as independently reviewed Mainland and Taiwan localizations, not mechanical script variants.
 3. Default to text repair only. Preserve every cue number, timestamp, and formatting-tag sequence. Require explicit authorization and matched audiovisual evidence for retiming, cue merges/splits, or positioning changes.
 4. Preserve original inputs. Write generated work into a portable job directory and deliver only named outputs.
@@ -40,6 +40,13 @@ python3 "$TOOL" inspect input.srt
 
 Confirm encoding, newline style, cue count and sequence, duration, overlaps, gaps, blank bodies, tags, speaker labels, and SDH style. Sample the beginning, middle, and end. Scan for uploader credits, betting ads, URLs, repeated interstitials, OCR/STT artifacts, improbable words, inconsistent names, and suspicious line breaks.
 
+Before initializing translation, pass the source-eligibility gate:
+
+- verify the observed subtitle language from representative cues, rather than trusting the filename, site filter, or user-provided language label;
+- compare the final cue time with the verified release runtime when available, and classify coverage as `full`, `partial`, or `unverified`;
+- record the claimed language, observed language, coverage, and evidence in the context pack or job notes;
+- if the track is in an unexpected language or is partial, do not present it as the requested source-language track or silently reconstruct one. Find a compatible track in the requested language, or obtain explicit permission to translate the track in its actual language directly to the requested target and disclose the coverage limit.
+
 Classify each problem as structural, textual, coverage, or timing. Do not claim that text refinement fixes missing dialogue or bad timing.
 
 ## Research the title
@@ -56,7 +63,7 @@ Build a compact context pack with scene order, character identities and relation
 
 ## Classify additional subtitle sources
 
-Treat every release-name source label as an unverified claim and classify its provenance using the release-provenance reference. Compare every candidate before using it:
+Treat every release-name source label as an unverified claim and classify its provenance using the release-provenance reference. Compare every candidate before using it. Create a small decision matrix containing observed language, coverage, timing family, textual provenance, and release-name claims. Prefer a full track in the requested source language that matches the user’s timing skeleton over a higher-quality but incompatible release:
 
 ```bash
 python3 "$TOOL" compare-sources input.srt independent.srt \
