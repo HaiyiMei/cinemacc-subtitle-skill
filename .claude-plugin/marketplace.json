@@ -7,14 +7,14 @@
   },
   "metadata": {
     "description": "Subtitle tooling published by CinemaCC.",
-    "version": "0.3.0"
+    "version": "0.4.0"
   },
   "plugins": [
     {
       "name": "cinemacc-subtitle",
       "source": "./",
       "description": "Research, repair, translate, and QA SRT subtitles without silently changing cue timing.",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "author": {
         "name": "CinemaCC",
         "email": "haiyimei@gmail.com",

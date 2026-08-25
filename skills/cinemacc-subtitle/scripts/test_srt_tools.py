@@ -65,6 +65,131 @@ class SrtToolsTests(unittest.TestCase):
             self.assertEqual(srt_tools.merge(chunks, merged), 0)
             self.assertEqual(srt_tools.validate(source, merged, scan=False), 0)
 
+    def test_prune_cues_drops_blocks_and_audits_renumbering(self) -> None:
+        cues = [
+            (1, "00:00:00,000 --> 00:00:01,000", ["Title"]),
+            (1, "00:00:01,000 --> 00:00:01,100", []),
+            (99, "00:00:01,100 --> 00:00:01,200", ["…"]),
+            (4, "00:00:02,000 --> 00:00:03,000", ["Dialogue"]),
+        ]
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            source = root / "source.srt"
+            output = root / "cleaned.srt"
+            audit = root / "prune-audit.json"
+            srt_tools.write_srt(source, cues)
+            source_hash = srt_tools.sha256_file(source)
+
+            self.assertEqual(
+                srt_tools.prune_cues(
+                    source,
+                    output,
+                    ["2-3"],
+                    audit,
+                    "Reviewed uploader animation fragments before program content.",
+                ),
+                0,
+            )
+
+            self.assertEqual(srt_tools.sha256_file(source), source_hash)
+            self.assertEqual(
+                srt_tools.parse_srt(output),
+                [
+                    (1, cues[0][1], ["Title"]),
+                    (2, cues[3][1], ["Dialogue"]),
+                ],
+            )
+            self.assertEqual(srt_tools.file_format(output)[0], True)
+            record = json.loads(audit.read_text())
+            self.assertEqual(record["dropped_blocks"], [2, 3])
+            self.assertEqual(record["source_cue_count"], 4)
+            self.assertEqual(record["output_cue_count"], 2)
+            self.assertEqual(record["mapping"][1]["action"], "dropped")
+            self.assertIsNone(record["mapping"][1]["output_number"])
+            self.assertEqual(record["mapping"][3]["output_number"], 2)
+
+    def test_prune_cues_rejects_unsafe_or_ambiguous_requests(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            source = root / "source.srt"
+            output = root / "cleaned.srt"
+            audit = root / "audit.json"
+            srt_tools.write_srt(
+                source,
+                [
+                    (1, "00:00:00,000 --> 00:00:01,000", ["One"]),
+                    (2, "00:00:01,000 --> 00:00:02,000", ["Two"]),
+                ],
+            )
+
+            with self.assertRaisesRegex(ValueError, "refusing to drop every cue"):
+                srt_tools.prune_cues(source, output, ["1-2"], audit, "Non-program")
+            with self.assertRaisesRegex(ValueError, "outside 1-2"):
+                srt_tools.prune_cues(source, output, ["3"], audit, "Non-program")
+            with self.assertRaisesRegex(ValueError, "original stays unchanged"):
+                srt_tools.prune_cues(source, source, ["1"], audit, "Non-program")
+            with self.assertRaisesRegex(ValueError, "original stays unchanged"):
+                srt_tools.prune_cues(source, output, ["1"], source, "Non-program")
+            with self.assertRaisesRegex(ValueError, "--reason"):
+                srt_tools.prune_cues(source, output, ["1"], audit, "  ")
+
+    def test_strict_qa_flags_consecutive_ellipsis_placeholders(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            source = root / "source.srt"
+            target = root / "target.srt"
+            report = root / "qa.json"
+            timestamps = [
+                f"00:00:0{index},000 --> 00:00:0{index},500" for index in range(3)
+            ]
+            srt_tools.write_srt(
+                source,
+                [
+                    (index + 1, timestamp, ["Source"])
+                    for index, timestamp in enumerate(timestamps)
+                ],
+            )
+            srt_tools.write_srt(
+                target,
+                [
+                    (index + 1, timestamp, ["…"])
+                    for index, timestamp in enumerate(timestamps)
+                ],
+            )
+
+            self.assertEqual(
+                srt_tools.qa(
+                    source,
+                    target,
+                    profile="zh-CN",
+                    max_chars_per_line=None,
+                    max_cps=None,
+                    max_lines=None,
+                    allowed_latin=[],
+                    forbidden_text=[],
+                    glossary=None,
+                    scan_regexes=[],
+                    waiver_path=None,
+                    report_path=report,
+                    strict=True,
+                ),
+                1,
+            )
+            findings = json.loads(report.read_text())["warnings"]
+            ellipsis = [item for item in findings if item["kind"] == "ellipsis_run"]
+            self.assertEqual(
+                ellipsis,
+                [
+                    {
+                        "kind": "ellipsis_run",
+                        "cue": 1,
+                        "end_cue": 3,
+                        "count": 3,
+                        "message": "three or more consecutive cues contain only ellipses",
+                    }
+                ],
+            )
+
     def test_validate_rejects_preserved_tag_mismatch(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
