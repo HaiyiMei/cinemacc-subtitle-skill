@@ -34,7 +34,7 @@ All notable changes to this repository are documented here. The project follows
 ### Changed
 
 - Prohibits presenting a mislabeled or partial track as the requested source-language deliverable. An unexpected-language track may be translated directly only with explicit user approval and clear coverage disclosure.
-- Clarifies that a complete requested-language track with the user's timing skeleton takes priority over a visually better but incompatible release.
+- Clarifies that a complete requested-language track with the user’s timing skeleton takes priority over a visually better but incompatible release.
 
 ## [0.2.0] - 2026-08-20
 

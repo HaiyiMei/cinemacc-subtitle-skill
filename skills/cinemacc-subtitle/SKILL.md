@@ -81,7 +81,7 @@ Build a compact context pack with scene order, character identities and relation
 
 ## Classify additional subtitle sources
 
-Treat every release-name source label as an unverified claim and classify its provenance using the release-provenance reference. Compare every candidate before using it. Create a small decision matrix containing observed language, coverage, timing family, textual provenance, and release-name claims. Prefer a full track in the requested source language that matches the user's timing skeleton over a higher-quality but incompatible release:
+Treat every release-name source label as an unverified claim and classify its provenance using the release-provenance reference. Compare every candidate before using it. Create a small decision matrix containing observed language, coverage, timing family, textual provenance, and release-name claims. Prefer a full track in the requested source language that matches the user’s timing skeleton over a higher-quality but incompatible release:
 
 ```bash
 python3 "$TOOL" compare-sources input.srt independent.srt \

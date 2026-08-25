@@ -4,11 +4,11 @@ Use this reference to choose a subtitle base, interpret release filenames, and e
 
 ## Verify language and coverage before trusting a candidate
 
-A site's language filter, filename suffix, uploader description, or user label is only a claim. For every prospective base track, inspect representative cues near the beginning, middle, and end to verify the observed language. Record any mismatch such as an Indonesian subtitle returned for an English request.
+A site’s language filter, filename suffix, uploader description, or user label is only a claim. For every prospective base track, inspect representative cues near the beginning, middle, and end to verify the observed language. Record any mismatch such as an Indonesian subtitle returned for an English request.
 
 Also compare the last cue with the verified runtime for the relevant release when available. Classify the track as `full`, `partial`, or `unverified`; an early last cue, abrupt ending, or site outro means it is not a full source track. Do not use a mismatched or partial track as the requested-language deliverable, and never relabel a translation of it as an original English source. It can still serve as separately disclosed wording evidence after timing and provenance checks.
 
-When several candidates exist, decide using a matrix of observed language, coverage, timing family, text provenance, and release claims. A complete requested-language track with the user's timing skeleton is normally preferable to a better-looking but incompatible release.
+When several candidates exist, decide using a matrix of observed language, coverage, timing family, text provenance, and release claims. A complete requested-language track with the user’s timing skeleton is normally preferable to a better-looking but incompatible release.
 
 ## Parse release names by role
 
