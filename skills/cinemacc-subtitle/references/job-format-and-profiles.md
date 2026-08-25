@@ -1,5 +1,11 @@
 # Job format and language profiles
 
+## Source eligibility record
+
+Before assigning the source tag or assembling outputs, record the claimed language, observed language, and coverage classification (`full`, `partial`, or `unverified`). Evidence must include representative cue samples and, when a reliable runtime is available, the final-cue-to-runtime comparison.
+
+A mislabeled or partial source can still be useful as evidence, but it is not an eligible base for a deliverable advertised as a complete track in another language. Do not manufacture an “English source” from a different-language subtitle merely because English was requested. Either locate a timing-compatible English track, or, with explicit user approval, translate the actual source language straight into the requested target and label the result honestly.
+
 ## Default outputs
 
 Use `zh-CN` for natural Mainland Simplified Chinese and `zh-TW` for natural Taiwan Traditional Chinese. Unless the user requests other targets, initialize both:
@@ -15,7 +21,7 @@ Treat language tags as output contracts, not script-conversion labels. Do not sh
 
 `init-job` creates:
 
-- `manifest.json`: source hash, language tags, output names, and relative artifact paths;
+- `manifest.json`: source hash, claimed and observed source-language records, coverage classification, language tags, output names, and relative artifact paths;
 - `source/source.srt`: immutable snapshot used for every structural comparison;
 - `workbook.tsv`: one row per cue;
 - `glossary.tsv`: canonical renderings by language;

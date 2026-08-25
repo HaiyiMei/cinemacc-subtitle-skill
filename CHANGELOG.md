@@ -4,6 +4,18 @@ All notable changes to this repository are documented here. The project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The version in
 `SKILL.md` (`metadata.version`) is authoritative; every plugin manifest mirrors it.
 
+## [0.3.0] - 2026-08-25
+
+### Added
+
+- A mandatory source-eligibility gate: verify the observed subtitle language from representative cues and classify coverage against the relevant runtime as full, partial, or unverified before translation begins.
+- A candidate-source decision matrix covering observed language, coverage, timing family, textual provenance, and release-name claims.
+
+### Changed
+
+- Prohibits presenting a mislabeled or partial track as the requested source-language deliverable. An unexpected-language track may be translated directly only with explicit user approval and clear coverage disclosure.
+- Clarifies that a complete requested-language track with the user’s timing skeleton takes priority over a visually better but incompatible release.
+
 ## [0.2.0] - 2026-08-20
 
 ### Added
