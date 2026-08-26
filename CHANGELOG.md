@@ -21,6 +21,8 @@ All notable changes to this repository are documented here. The project follows
 
 - Delivery now keeps standalone SRTs and emits one CinemaCC bundle per target language. Public import
   links are conditional on an anonymous direct URL; the skill does not upload subtitles automatically.
+- The compact `SKILL.md` now routes each stage to a focused reference so partial requests load only the
+  acquisition, repair, translation and QA, or delivery instructions they need.
 
 ## [0.4.0] - 2026-08-25
 
