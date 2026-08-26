@@ -119,7 +119,7 @@ distribution manifest. Both run in CI on every push.
 
 ## Evaluate
 
-[`evals/harbor-lights/case.json`](evals/harbor-lights/case.json) is a synthetic end-to-end regression case for implicit triggering, the full acquire → review → zh-CN translation → CinemaCC delivery route, and the rule against inventing an import link. Run its prompt in a clean directory, then grade the resulting package:
+[`evals/harbor-lights/case.json`](evals/harbor-lights/case.json) is a synthetic end-to-end regression case that explicitly invokes the installed skill and exercises the full acquire → review → zh-CN translation → CinemaCC delivery route, including the rule against inventing an import link. Run its prompt in a clean directory, then grade the resulting package:
 
 ```bash
 python3 evals/evaluate.py /path/to/candidate.cinemacc.zip
