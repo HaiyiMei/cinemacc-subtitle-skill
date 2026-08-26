@@ -1,7 +1,7 @@
 {
   "id": "harbor-lights-full-workflow-zh-cn-v1",
   "kind": "regression",
-  "prompt": "请下载这个英文 SRT，先检查和校对，再翻译成简体中文，最后打包成一个 CinemaCC 可导入的 ZIP。只要简中，不要繁中。保留原始时间轴和格式标签；如果成品 ZIP 没有经过匿名 HTTPS 验证，就不要声称它有一键导入链接。片名：Harbor Lights（2026）；版本：Harbor.Lights.2026.SYNTHETIC.WEB-DL；源文件：https://raw.githubusercontent.com/HaiyiMei/cinemacc-subtitle-skill/main/evals/harbor-lights/source.en.srt",
+  "prompt": "Use the installed cinemacc-subtitle skill (https://github.com/HaiyiMei/cinemacc-subtitle-skill) to complete this task: Download this English SRT, review and refine it, translate it into Simplified Chinese, then package a ZIP that CinemaCC can import. Produce zh-CN only, not zh-TW. Preserve the original cue timings and formatting tags. Do not claim a one-tap import link unless the finished ZIP has been verified at an anonymous public HTTPS URL. Title: Harbor Lights (2026). Release: Harbor.Lights.2026.SYNTHETIC.WEB-DL. Source: https://raw.githubusercontent.com/HaiyiMei/cinemacc-subtitle-skill/main/evals/harbor-lights/source.en.srt",
   "input": {
     "title": "Harbor Lights",
     "year": 2026,
@@ -32,7 +32,7 @@
     ]
   },
   "humanRubric": [
-    "The skill triggers without being named and runs acquire, review, translate, and delivery stages.",
+    "The named skill is loaded and runs acquire, review, translate, and delivery stages.",
     "Only zh-CN is produced; the agent does not add the default zh-TW target against the explicit request.",
     "The translation is natural Mainland Chinese, preserves the scene meaning and italic emphasis, and invents no dialogue.",
     "The response reports the source, synthetic release, QA result, and remaining uncertainty.",
