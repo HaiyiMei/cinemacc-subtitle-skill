@@ -32,6 +32,8 @@ jobs:
           python-version: "3.12"
       - name: Check manifest consistency and Agent Skills limits
         run: python3 tools/check_manifests.py
+      - name: Check the committed evaluation package
+        run: python3 evals/evaluate.py
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
