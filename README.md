@@ -110,11 +110,22 @@ The skill uses no MCP servers and no client-specific hooks, so the portable core
 ```bash
 python3 skills/cinemacc-subtitle/scripts/test_srt_tools.py
 python3 tools/check_manifests.py
+python3 evals/evaluate.py
 ```
 
 The first command exercises the deterministic tooling. The second validates the `SKILL.md` frontmatter
 against the Agent Skills specification limits and checks that the skill name and version match every
 distribution manifest. Both run in CI on every push.
+
+## Evaluate
+
+[`evals/harbor-lights/case.json`](evals/harbor-lights/case.json) is a synthetic end-to-end regression case for implicit triggering, the full acquire → review → zh-CN translation → CinemaCC delivery route, and the rule against inventing an import link. Run its prompt in a clean directory, then grade the resulting package:
+
+```bash
+python3 evals/evaluate.py /path/to/candidate.cinemacc.zip
+```
+
+The deterministic grader checks the package contract, source-byte preservation, cue timing, formatting tags, and player encoding. Use the human rubric in the case file for translation quality and the agent's report. The committed [reference package](evals/harbor-lights/reference.cinemacc.zip) is also a stable public fixture for CinemaCC import tests after it lands on `main`.
 
 ## Privacy, cost, and rights
 
