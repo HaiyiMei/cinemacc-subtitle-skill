@@ -2,9 +2,9 @@
 
 [![skills.sh](https://skills.sh/b/HaiyiMei/cinemacc-subtitle-skill)](https://skills.sh/HaiyiMei/cinemacc-subtitle-skill)
 
-An open, auditable Agent Skill for researching, repairing, translating, and validating movie or TV SRT subtitles without silently changing cue timing.
+An open, auditable Agent Skill for finding or using a source SRT, repairing, translating, validating, and packaging movie or TV subtitles without silently changing cue timing.
 
-The skill keeps semantic decisions with the agent or human reviewer and delegates snapshots, hashes, source comparison, chunking, assembly, structural QA, and atomic delivery to a deterministic Python tool.
+The skill keeps semantic decisions with the agent or human reviewer and delegates snapshots, hashes, source comparison, chunking, assembly, structural QA, CinemaCC bundles, and atomic delivery to a deterministic Python tool.
 
 ## Install
 
@@ -49,13 +49,14 @@ intact. Nothing outside that directory is required at runtime.
 ## Use
 
 ```text
-Use $cinemacc-subtitle to research and refine this SRT, then create validated zh-CN and zh-TW subtitles without changing its timing.
+Use $cinemacc-subtitle to find an eligible English SRT for [title and year], refine it, translate it into zh-CN, and package the result for CinemaCC.
 ```
 
-By default, the skill produces a refined source track plus independently localized Mainland Chinese (`zh-CN`) and Taiwan Chinese (`zh-TW`) tracks. Other target languages can be requested explicitly.
+When only a title is supplied, the default route acquires and verifies a source, refines it, translates it, runs QA, and delivers the result. An attached source skips acquisition. Explicit requests can stop after download, refinement, translation, or packaging. Chinese jobs still default to independently localized Mainland Chinese (`zh-CN`) and Taiwan Chinese (`zh-TW`) unless the user requests one target.
 
 ## What it handles
 
+- source search and ordinary authorized download with a manual fallback for blocked sites;
 - source-track diagnosis and OCR/STT repair before translation;
 - title, character, terminology, and cultural context research;
 - subtitle-source provenance and timing-family comparison;
@@ -63,7 +64,8 @@ By default, the skill produces a refined source track plus independently localiz
 - deterministic cue, timestamp, formatting-tag, encoding, and newline checks;
 - audited pruning and sequential renumbering of confirmed non-program cue residue;
 - safe chunk splitting and merging for long subtitles;
-- atomic delivery with hashes and receipts.
+- deterministic two-track CinemaCC ZIP bundles with movie, release, language, and source metadata;
+- atomic standalone-file delivery with hashes and receipts.
 
 ## Repository layout
 
@@ -101,7 +103,7 @@ The skill uses no MCP servers and no client-specific hooks, so the portable core
 
 - Python 3.10 or newer; the deterministic tooling uses only the standard library.
 - A skills-compatible agent with file access.
-- Web access for title-specific research unless the input is a synthetic fixture, private unreleased recording, or the user explicitly requests no browsing.
+- Web access for source acquisition and title-specific research unless a usable source is supplied and the user explicitly requests no browsing.
 
 ## Verify
 
@@ -116,13 +118,13 @@ distribution manifest. Both run in CI on every push.
 
 ## Privacy, cost, and rights
 
-CinemaCC does not operate a translation service for this skill. Subtitle text and research queries may be sent to the agent or model provider you choose, and that provider's pricing and privacy terms apply.
+CinemaCC does not operate a translation or subtitle-hosting service for this skill. Subtitle text, source pages, and research queries may be sent to the agent or model provider you choose, and that provider's pricing and privacy terms apply.
 
 The repository does not include commercial movie or TV subtitles. You are responsible for having the rights needed to translate or distribute any source and output files.
 
 ## CinemaCC
 
-[CinemaCC](https://cinemacc.net) is a subtitle companion for films on any screen. It can import one or two SRT tracks for synchronized, theater-dark playback.
+[CinemaCC](https://cinemacc.net) is a subtitle companion for films on any screen. It can import one or two SRT tracks, including the two-track ZIP produced by this skill, for synchronized theater-dark playback.
 
 ## License
 

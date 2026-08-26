@@ -4,6 +4,27 @@ All notable changes to this repository are documented here. The project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The version in
 `SKILL.md` (`metadata.version`) is authoritative; every plugin manifest mirrors it.
 
+## [0.5.0] - 2026-08-26
+
+### Added
+
+- Intent routing for the complete acquisition, refinement, translation, QA, and delivery workflow plus
+  explicit download-only, refine-only, translate-only, and package-only requests.
+- Source-acquisition guidance that preserves originals, verifies candidate language and coverage, and
+  stops at a manual handoff instead of bypassing blocked downloads.
+- `bundle-cinemacc`, a standard-library command that creates a deterministic two-track CinemaCC ZIP,
+  and `cinemacc-link`, which formats a verified public HTTPS ZIP URL as a one-tap import link.
+- Optional package metadata for movie title, year, release, track languages, and short source labels.
+- Tests for the ZIP manifest, byte preservation, deterministic output, link encoding, and insecure-link
+  rejection.
+
+### Changed
+
+- Delivery now keeps standalone SRTs and emits one CinemaCC bundle per target language. Public import
+  links are conditional on an anonymous direct URL; the skill does not upload subtitles automatically.
+- The compact `SKILL.md` now routes each stage to a focused reference so partial requests load only the
+  acquisition, repair, translation and QA, or delivery instructions they need.
+
 ## [0.4.0] - 2026-08-25
 
 ### Added

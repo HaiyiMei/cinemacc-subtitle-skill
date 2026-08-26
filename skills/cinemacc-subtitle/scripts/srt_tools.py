@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import bisect
 import hashlib
+import ipaddress
 import json
 import os
 import re
@@ -13,9 +14,11 @@ import shutil
 import statistics
 import sys
 import tempfile
+import zipfile
 from collections import Counter
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlencode, urlsplit
 
 
 TIMESTAMP_RE = re.compile(
@@ -28,9 +31,13 @@ LATIN_TOKEN_RE = re.compile(r"[A-Za-z][A-Za-z0-9-]{2,}")
 LANGUAGE_TAG_RE = re.compile(
     r"(?:[._-](?:en|eng|zh-CN|zh-TW|zh-Hans|zh-Hant))$", re.IGNORECASE
 )
+BUNDLE_LANGUAGE_RE = re.compile(r"^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$")
 WORKBOOK_BASE_COLUMNS = ["number", "timestamp", "source", "refined"]
 WORKBOOK_TRAILING_COLUMNS = ["confidence", "notes"]
 DEFAULT_TARGETS = ["zh-CN", "zh-TW"]
+CINEMACC_IMPORT_ORIGIN = "https://open.cinemacc.net"
+CINEMACC_MAX_ARCHIVE_BYTES = 5 * 1024 * 1024
+CINEMACC_MAX_OUTPUT_BYTES = 10 * 1024 * 1024
 QA_PROFILES = {
     "en": {"max_chars_per_line": 48, "max_cps": 20.0, "max_lines": 2},
     "zh-CN": {"max_chars_per_line": 22, "max_cps": 13.0, "max_lines": 2},
@@ -1428,6 +1435,162 @@ def merge(in_dir: Path, output: Path) -> int:
     return 0
 
 
+def cinemacc_import_link(download_url: str) -> str:
+    """Wrap a verified public HTTPS subtitle URL in CinemaCC's import link."""
+
+    parsed = urlsplit(download_url)
+    hostname = (parsed.hostname or "").rstrip(".").lower()
+    if (
+        parsed.scheme != "https"
+        or not hostname
+        or parsed.username is not None
+        or parsed.password is not None
+        or hostname == "localhost"
+        or hostname.endswith(".localhost")
+        or hostname.endswith(".local")
+    ):
+        raise ValueError("CinemaCC import requires a public HTTPS URL without credentials")
+    try:
+        address = ipaddress.ip_address(hostname)
+    except ValueError:
+        address = None
+    if address is not None and not address.is_global:
+        raise ValueError("CinemaCC import URL must not use a private or reserved address")
+    return f"{CINEMACC_IMPORT_ORIGIN}/import#{urlencode({'url': download_url})}"
+
+
+def bundle_metadata_text(label: str, value: str | None, max_length: int) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip()
+    if not normalized:
+        return None
+    if len(normalized) > max_length or any(
+        ord(character) < 32
+        or ord(character) == 127
+        or character in "\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069"
+        for character in normalized
+    ):
+        raise ValueError(f"{label} is invalid or too long")
+    return normalized
+
+
+def bundle_language(label: str, value: str | None) -> str | None:
+    normalized = bundle_metadata_text(label, value, 35)
+    if normalized is None:
+        return None
+    normalized = normalized.replace("_", "-")
+    if not BUNDLE_LANGUAGE_RE.fullmatch(normalized):
+        raise ValueError(f"{label} must be a BCP 47 language tag")
+    parts = normalized.split("-")
+    return "-".join(
+        part.lower()
+        if index == 0
+        else part.title()
+        if len(part) == 4 and part.isalpha()
+        else part.upper()
+        if (len(part) == 2 and part.isalpha()) or (len(part) == 3 and part.isdigit())
+        else part.lower()
+        for index, part in enumerate(parts)
+    )
+
+
+def bundle_cinemacc(
+    dialogue: Path,
+    translation: Path,
+    output: Path,
+    title: str | None = None,
+    year: int | None = None,
+    release: str | None = None,
+    dialogue_language: str | None = None,
+    translation_language: str | None = None,
+    dialogue_source: str | None = None,
+    translation_source: str | None = None,
+    overwrite: bool = False,
+) -> int:
+    """Atomically build a deterministic two-track ZIP accepted by CinemaCC."""
+
+    if dialogue.resolve() == translation.resolve():
+        raise ValueError("dialogue and translation must be different files")
+    if output.suffix.lower() != ".zip":
+        raise ValueError("CinemaCC bundle output must end in .zip")
+    if output.resolve() in {dialogue.resolve(), translation.resolve()}:
+        raise ValueError("CinemaCC bundle must not overwrite an input")
+    if output.exists() and not overwrite:
+        raise ValueError(f"bundle already exists: {output}; pass --overwrite to replace it")
+
+    dialogue_cues = parse_srt(dialogue)
+    translation_cues = parse_srt(translation)
+    if not dialogue_cues or not translation_cues:
+        raise ValueError("CinemaCC bundle requires two non-empty SRT files")
+    if [(number, timing) for number, timing, _ in dialogue_cues] != [
+        (number, timing) for number, timing, _ in translation_cues
+    ]:
+        raise ValueError("dialogue and translation cue number/timestamp skeletons differ")
+
+    dialogue_bytes = dialogue.read_bytes()
+    translation_bytes = translation.read_bytes()
+    if len(dialogue_bytes) + len(translation_bytes) > CINEMACC_MAX_OUTPUT_BYTES:
+        raise ValueError("CinemaCC bundle exceeds the decompressed size limit")
+    manifest: dict[str, Any] = {
+        "dialogue": "dialogue.srt",
+        "format": "cinemacc-subtitles",
+        "translation": "translation.srt",
+        "version": 1,
+    }
+    metadata = {
+        "title": bundle_metadata_text("title", title, 200),
+        "release": bundle_metadata_text("release", release, 240),
+        "dialogueLanguage": bundle_language("dialogue language", dialogue_language),
+        "translationLanguage": bundle_language("translation language", translation_language),
+        "dialogueSource": bundle_metadata_text("dialogue source", dialogue_source, 160),
+        "translationSource": bundle_metadata_text("translation source", translation_source, 160),
+    }
+    manifest.update({key: value for key, value in metadata.items() if value is not None})
+    if year is not None:
+        if year < 1800 or year > 2200:
+            raise ValueError("year must be between 1800 and 2200")
+        manifest["year"] = year
+    entries = {
+        "cinemacc.json": (
+            json.dumps(manifest, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+            + "\n"
+        ).encode("utf-8"),
+        "dialogue.srt": dialogue_bytes,
+        "translation.srt": translation_bytes,
+    }
+
+    output.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            dir=output.parent,
+            prefix=f".{output.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as handle:
+            temporary_path = Path(handle.name)
+        with zipfile.ZipFile(
+            temporary_path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
+        ) as archive:
+            for name, data in entries.items():
+                info = zipfile.ZipInfo(name, (1980, 1, 1, 0, 0, 0))
+                info.compress_type = zipfile.ZIP_DEFLATED
+                info.create_system = 3
+                info.external_attr = 0o644 << 16
+                archive.writestr(info, data, compresslevel=9)
+        if temporary_path.stat().st_size > CINEMACC_MAX_ARCHIVE_BYTES:
+            raise ValueError("CinemaCC bundle exceeds the remote download size limit")
+        os.replace(temporary_path, output)
+    finally:
+        if temporary_path and temporary_path.exists():
+            temporary_path.unlink()
+
+    print(f"CinemaCC bundle: {output}")
+    print(f"sha256: {sha256_file(output)}")
+    return 0
+
+
 def deliver_job(
     job: Path,
     destination: Path,
@@ -1703,6 +1866,22 @@ def main(argv: list[str] | None = None) -> int:
     deliver_parser.add_argument("destination", type=Path)
     deliver_parser.add_argument("--overwrite", action="store_true")
 
+    bundle_parser = sub.add_parser("bundle-cinemacc")
+    bundle_parser.add_argument("dialogue", type=Path)
+    bundle_parser.add_argument("translation", type=Path)
+    bundle_parser.add_argument("output", type=Path)
+    bundle_parser.add_argument("--title")
+    bundle_parser.add_argument("--year", type=int)
+    bundle_parser.add_argument("--release")
+    bundle_parser.add_argument("--dialogue-language")
+    bundle_parser.add_argument("--translation-language")
+    bundle_parser.add_argument("--dialogue-source")
+    bundle_parser.add_argument("--translation-source")
+    bundle_parser.add_argument("--overwrite", action="store_true")
+
+    link_parser = sub.add_parser("cinemacc-link")
+    link_parser.add_argument("url")
+
     args = parser.parse_args(argv)
     try:
         if args.command == "inspect":
@@ -1785,6 +1964,23 @@ def main(argv: list[str] | None = None) -> int:
             return merge(args.in_dir, args.output)
         if args.command == "deliver-job":
             return deliver_job(args.job, args.destination, args.overwrite)
+        if args.command == "bundle-cinemacc":
+            return bundle_cinemacc(
+                args.dialogue,
+                args.translation,
+                args.output,
+                args.title,
+                args.year,
+                args.release,
+                args.dialogue_language,
+                args.translation_language,
+                args.dialogue_source,
+                args.translation_source,
+                args.overwrite,
+            )
+        if args.command == "cinemacc-link":
+            print(cinemacc_import_link(args.url))
+            return 0
     except Exception as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
