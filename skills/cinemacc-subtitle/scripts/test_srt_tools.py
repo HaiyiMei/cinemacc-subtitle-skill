@@ -4,6 +4,7 @@ import importlib.util
 import json
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 
@@ -15,6 +16,70 @@ SPEC.loader.exec_module(srt_tools)
 
 
 class SrtToolsTests(unittest.TestCase):
+    def test_cinemacc_bundle_and_link_match_the_app_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            dialogue = root / "Movie.refined.en.srt"
+            translation = root / "Movie.zh-CN.srt"
+            first_bundle = root / "Movie.zh-CN.cinemacc.zip"
+            second_bundle = root / "repeat.zip"
+            cues = [(1, "00:00:00,000 --> 00:00:01,000", ["Hello"])]
+            srt_tools.write_srt(dialogue, cues)
+            srt_tools.write_srt(
+                translation,
+                [(1, cues[0][1], ["你好"])],
+            )
+
+            self.assertEqual(
+                srt_tools.bundle_cinemacc(
+                    dialogue, translation, first_bundle, title="Movie (2026)"
+                ),
+                0,
+            )
+            self.assertEqual(
+                srt_tools.bundle_cinemacc(
+                    dialogue, translation, second_bundle, title="Movie (2026)"
+                ),
+                0,
+            )
+            self.assertEqual(first_bundle.read_bytes(), second_bundle.read_bytes())
+            with zipfile.ZipFile(first_bundle) as archive:
+                self.assertEqual(
+                    archive.namelist(),
+                    ["cinemacc.json", "dialogue.srt", "translation.srt"],
+                )
+                self.assertEqual(archive.read("dialogue.srt"), dialogue.read_bytes())
+                self.assertEqual(archive.read("translation.srt"), translation.read_bytes())
+                self.assertEqual(
+                    json.loads(archive.read("cinemacc.json")),
+                    {
+                        "dialogue": "dialogue.srt",
+                        "format": "cinemacc-subtitles",
+                        "title": "Movie (2026)",
+                        "translation": "translation.srt",
+                        "version": 1,
+                    },
+                )
+
+            direct_url = "https://files.example/movie.zip?token=abc"
+            self.assertEqual(
+                srt_tools.cinemacc_import_link(direct_url),
+                "https://open.cinemacc.net/import#"
+                "url=https%3A%2F%2Ffiles.example%2Fmovie.zip%3Ftoken%3Dabc",
+            )
+            with self.assertRaisesRegex(ValueError, "public HTTPS"):
+                srt_tools.cinemacc_import_link("http://localhost/movie.zip")
+            with self.assertRaisesRegex(ValueError, "private or reserved"):
+                srt_tools.cinemacc_import_link("https://127.0.0.1/movie.zip")
+
+            mismatched = root / "mismatched.srt"
+            srt_tools.write_srt(
+                mismatched,
+                [(1, "00:00:02,000 --> 00:00:03,000", ["你好"])],
+            )
+            with self.assertRaisesRegex(ValueError, "skeletons differ"):
+                srt_tools.bundle_cinemacc(dialogue, mismatched, root / "bad.zip")
+
     def test_write_srt_emits_bom_and_pure_crlf(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             path = Path(temporary_directory) / "target.srt"

@@ -1,10 +1,10 @@
 ---
 name: cinemacc-subtitle
-description: Research, diagnose, prune confirmed non-program residue, repair, translate, QA, and deliver movie or TV SRT subtitles while preserving program-content cue timing. Use for poor source tracks, blank or placeholder runs, uploader or watermark fragments, OCR/STT cleanup, context-aware translation, independent zh-CN/zh-TW localization, source comparison, SDH, glossaries, long-form chunking, or exact UTF-8 BOM/CRLF delivery.
+description: Find or use a supplied movie or TV SRT, verify its language and coverage, repair, translate, QA, and deliver standalone files or CinemaCC import bundles while preserving program-content cue timing. Use for source acquisition, poor source tracks, uploader residue, OCR/STT cleanup, context-aware localization, source comparison, SDH, long-form chunking, or import-ready delivery.
 license: MIT
 metadata:
   author: CinemaCC
-  version: "0.4.0"
+  version: "0.5.0"
 ---
 
 # CinemaCC Subtitle Skill
@@ -13,17 +13,34 @@ Produce a clean source-language track before translating it. Keep semantic decis
 
 Require Python 3.10 or newer, local file read/write and shell access, and web access for title research unless the user opts out. The deterministic tool uses only the Python standard library.
 
-Resolve `scripts/srt_tools.py` from this skill directory and reuse that absolute path as `TOOL`. Read [references/job-format-and-profiles.md](references/job-format-and-profiles.md) when creating a job, translating Chinese, handling contaminated cues, recording QA waivers, or delivering files. Read [references/release-provenance-and-trust.md](references/release-provenance-and-trust.md) when comparing candidate releases, interpreting release names, assessing uploaders or credits, or deciding whether a subtitle is official, transcribed, OCR-derived, or machine-translated.
+Resolve `scripts/srt_tools.py` from this skill directory and reuse that absolute path as `TOOL`. Read [references/job-format-and-profiles.md](references/job-format-and-profiles.md) when creating a job, translating Chinese, handling contaminated cues, recording QA waivers, or delivering files. Read [references/release-provenance-and-trust.md](references/release-provenance-and-trust.md) when comparing candidate releases, interpreting release names, assessing uploaders or credits, or deciding whether a subtitle is official, transcribed, OCR-derived, or machine-translated. Read [references/source-acquisition-and-cinemacc-delivery.md](references/source-acquisition-and-cinemacc-delivery.md) when no eligible source file was supplied, when the user requests only part of the workflow, or when packaging files for CinemaCC.
+
+## Route the requested outcome
+
+When the user gives only a title, default to the complete workflow: acquire an eligible source, refine it, translate it, run QA, and deliver the files. When a usable SRT is already attached, begin with inspection instead of searching again. Honor explicit partial requests:
+
+- **find or download only:** acquire and verify the source, preserve it unchanged, report provenance and coverage, then stop;
+- **refine only:** inspect, repair, and QA the source without adding a translation;
+- **translate only:** run the source-eligibility and structural gates, then translate without silently rewriting the source;
+- **package for CinemaCC:** validate the supplied pair, create the bundle, and create an import link only when its direct URL is verified public.
+
+Source eligibility, preservation of original files, structural validation, and honest uncertainty reporting remain required in every applicable route. Do not run omitted semantic stages merely because the full workflow supports them.
 
 ## Establish the contract
 
-1. Record the input path, claimed source language, requested output directory, and naming convention. Treat the claimed language as unverified until inspection samples confirm it.
+1. Record the title and release year, claimed source language, requested targets, output directory, and naming convention. Record the input path when one exists; otherwise acquire a source before initializing a job. Treat every claimed language as unverified until inspection samples confirm it.
 2. Default Chinese work to both `zh-CN` and `zh-TW`. Treat them as independently reviewed Mainland and Taiwan localizations, not mechanical script variants.
-3. Default to text repair only. Preserve every program-content cue, timestamp, and formatting-tag sequence. Require explicit authorization and matched audiovisual evidence for retiming, cue merges/splits, or positioning changes. Treat confirmed non-program residue under the audited pruning policy below, never as dialogue placeholders.
+3. Default source editing to text repair only. Preserve every program-content cue, timestamp, and formatting-tag sequence. Require explicit authorization and matched audiovisual evidence for retiming, cue merges/splits, or positioning changes. Treat confirmed non-program residue under the audited pruning policy below, never as dialogue placeholders.
 4. Preserve original inputs. Write generated work into a portable job directory and deliver only named outputs.
 5. Do not use external machine-translation services unless the user explicitly requests one.
 
-Do not initialize a job until the initial inspection and any audited source pruning are complete.
+Do not initialize a job until source acquisition, initial inspection, and any audited source pruning are complete.
+
+## Acquire an eligible source when needed
+
+If no usable source file was supplied, use the acquisition reference to compare accessible candidates before downloading. Prefer an exact release match in the requested source language with full coverage. Preserve the downloaded original and record its page or provider URL, release claim, observed language, coverage, and access date.
+
+Use ordinary authorized access only. Do not bypass logins, CAPTCHAs, paywalls, provider limits, disabled files, or removal decisions. If automated download is blocked, return the best candidate pages and ask the user to download and attach the file. Never substitute another language or a partial track without explicit approval and disclosure.
 
 ## Inspect and diagnose
 
@@ -187,6 +204,21 @@ python3 "$TOOL" deliver-job work/subtitle-job /current/output/directory
 
 Use `--overwrite` only after confirming the exact existing targets. Validate the copied files again when delivery crosses a filesystem, cloud-sync boundary, or sandbox boundary. Report coverage and timing limits honestly.
 
+For CinemaCC, keep the standalone SRT files and also create one two-track bundle per requested target:
+
+```bash
+python3 "$TOOL" bundle-cinemacc refined.en.srt movie.zh-CN.srt \
+  movie.zh-CN.cinemacc.zip --title "Movie (2026)"
+```
+
+If the ZIP has a verified anonymous public HTTPS download URL, create the one-tap handoff:
+
+```bash
+python3 "$TOOL" cinemacc-link "https://files.example/movie.zh-CN.cinemacc.zip"
+```
+
+Do not claim an agent attachment or account-scoped artifact URL is importable without testing it without session cookies. If no suitable public URL exists, deliver the ZIP and tell the user to share or open it with CinemaCC. Never upload subtitle files to a new public host without explicit authorization.
+
 ## Deterministic boundary
 
-Use `srt_tools.py` for audited cue pruning and renumbering, snapshots, hashes, source comparison, workbook splitting/merging, assembly, structural validation, QA reports, atomic delivery, and receipts. Keep the decision that blocks are non-program, research, evidence evaluation, dialogue repair, translation, and waiver judgment in the model or human review. Never add a script that calls a translation service or silently rewrites subtitle meaning.
+Use `srt_tools.py` for audited cue pruning and renumbering, snapshots, hashes, source comparison, workbook splitting/merging, assembly, structural validation, QA reports, atomic delivery, CinemaCC bundles, import-link formatting, and receipts. Keep source discovery, access decisions, the decision that blocks are non-program, research, evidence evaluation, dialogue repair, translation, and waiver judgment in the model or human review. Never add a script that calls a translation service or silently rewrites subtitle meaning.

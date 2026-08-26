@@ -1,7 +1,7 @@
 {
   "name": "cinemacc-subtitle",
-  "version": "0.4.0",
-  "description": "An auditable agent skill for repairing, translating, and validating SRT subtitles.",
+  "version": "0.5.0",
+  "description": "An auditable agent skill for finding, repairing, translating, validating, and packaging SRT subtitles.",
   "author": {
     "name": "CinemaCC",
     "email": "haiyimei@gmail.com",
@@ -20,16 +20,17 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "CinemaCC Subtitle Skill",
-    "shortDescription": "Repair, translate, and QA SRT subtitles",
-    "longDescription": "Research title context, repair source tracks, translate for each locale, and validate SRT subtitles without silently changing cue timing.",
+    "shortDescription": "Find, refine, translate, and package SRT subtitles",
+    "longDescription": "Find or use a source track, verify it, repair and translate it, then deliver standalone SRTs or a CinemaCC import bundle without silently changing cue timing.",
     "developerName": "CinemaCC",
     "category": "Creativity",
     "capabilities": ["Read", "Write"],
     "websiteURL": "https://cinemacc.net",
     "defaultPrompt": [
+      "Find an eligible English SRT for this title, refine it, translate it, and package the result for CinemaCC.",
       "Repair and translate this SRT into natural Simplified and Traditional Chinese.",
       "Inspect this subtitle file and report structural, textual, coverage, and timing risks.",
-      "Compare these SRT sources and identify which evidence is safe to reuse."
+      "Package this checked source and translation as a CinemaCC import bundle."
     ]
   }
 }
