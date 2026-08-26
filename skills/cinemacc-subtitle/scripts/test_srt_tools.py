@@ -32,13 +32,31 @@ class SrtToolsTests(unittest.TestCase):
 
             self.assertEqual(
                 srt_tools.bundle_cinemacc(
-                    dialogue, translation, first_bundle, title="Movie (2026)"
+                    dialogue,
+                    translation,
+                    first_bundle,
+                    title="Movie",
+                    year=2026,
+                    release="Movie.2026.1080p.WEB-DL",
+                    dialogue_language="en",
+                    translation_language="zh-cn",
+                    dialogue_source="OpenSubtitles file 123",
+                    translation_source="CinemaCC Subtitle Skill",
                 ),
                 0,
             )
             self.assertEqual(
                 srt_tools.bundle_cinemacc(
-                    dialogue, translation, second_bundle, title="Movie (2026)"
+                    dialogue,
+                    translation,
+                    second_bundle,
+                    title="Movie",
+                    year=2026,
+                    release="Movie.2026.1080p.WEB-DL",
+                    dialogue_language="en",
+                    translation_language="zh-cn",
+                    dialogue_source="OpenSubtitles file 123",
+                    translation_source="CinemaCC Subtitle Skill",
                 ),
                 0,
             )
@@ -54,10 +72,16 @@ class SrtToolsTests(unittest.TestCase):
                     json.loads(archive.read("cinemacc.json")),
                     {
                         "dialogue": "dialogue.srt",
+                        "dialogueLanguage": "en",
+                        "dialogueSource": "OpenSubtitles file 123",
                         "format": "cinemacc-subtitles",
-                        "title": "Movie (2026)",
+                        "release": "Movie.2026.1080p.WEB-DL",
+                        "title": "Movie",
                         "translation": "translation.srt",
+                        "translationLanguage": "zh-CN",
+                        "translationSource": "CinemaCC Subtitle Skill",
                         "version": 1,
+                        "year": 2026,
                     },
                 )
 
@@ -79,6 +103,20 @@ class SrtToolsTests(unittest.TestCase):
             )
             with self.assertRaisesRegex(ValueError, "skeletons differ"):
                 srt_tools.bundle_cinemacc(dialogue, mismatched, root / "bad.zip")
+            with self.assertRaisesRegex(ValueError, "BCP 47"):
+                srt_tools.bundle_cinemacc(
+                    dialogue,
+                    translation,
+                    root / "bad-language.zip",
+                    dialogue_language="not a language",
+                )
+            with self.assertRaisesRegex(ValueError, "between 1800 and 2200"):
+                srt_tools.bundle_cinemacc(
+                    dialogue,
+                    translation,
+                    root / "bad-year.zip",
+                    year=42,
+                )
 
     def test_write_srt_emits_bom_and_pure_crlf(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

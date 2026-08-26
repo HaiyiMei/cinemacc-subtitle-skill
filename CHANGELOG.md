@@ -14,6 +14,7 @@ All notable changes to this repository are documented here. The project follows
   stops at a manual handoff instead of bypassing blocked downloads.
 - `bundle-cinemacc`, a standard-library command that creates a deterministic two-track CinemaCC ZIP,
   and `cinemacc-link`, which formats a verified public HTTPS ZIP URL as a one-tap import link.
+- Optional package metadata for movie title, year, release, track languages, and short source labels.
 - Tests for the ZIP manifest, byte preservation, deterministic output, link encoding, and insecure-link
   rejection.
 

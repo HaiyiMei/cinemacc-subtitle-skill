@@ -31,6 +31,7 @@ LATIN_TOKEN_RE = re.compile(r"[A-Za-z][A-Za-z0-9-]{2,}")
 LANGUAGE_TAG_RE = re.compile(
     r"(?:[._-](?:en|eng|zh-CN|zh-TW|zh-Hans|zh-Hant))$", re.IGNORECASE
 )
+BUNDLE_LANGUAGE_RE = re.compile(r"^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$")
 WORKBOOK_BASE_COLUMNS = ["number", "timestamp", "source", "refined"]
 WORKBOOK_TRAILING_COLUMNS = ["confidence", "notes"]
 DEFAULT_TARGETS = ["zh-CN", "zh-TW"]
@@ -1458,11 +1459,53 @@ def cinemacc_import_link(download_url: str) -> str:
     return f"{CINEMACC_IMPORT_ORIGIN}/import#{urlencode({'url': download_url})}"
 
 
+def bundle_metadata_text(label: str, value: str | None, max_length: int) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip()
+    if not normalized:
+        return None
+    if len(normalized) > max_length or any(
+        ord(character) < 32
+        or ord(character) == 127
+        or character in "\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069"
+        for character in normalized
+    ):
+        raise ValueError(f"{label} is invalid or too long")
+    return normalized
+
+
+def bundle_language(label: str, value: str | None) -> str | None:
+    normalized = bundle_metadata_text(label, value, 35)
+    if normalized is None:
+        return None
+    normalized = normalized.replace("_", "-")
+    if not BUNDLE_LANGUAGE_RE.fullmatch(normalized):
+        raise ValueError(f"{label} must be a BCP 47 language tag")
+    parts = normalized.split("-")
+    return "-".join(
+        part.lower()
+        if index == 0
+        else part.title()
+        if len(part) == 4 and part.isalpha()
+        else part.upper()
+        if (len(part) == 2 and part.isalpha()) or (len(part) == 3 and part.isdigit())
+        else part.lower()
+        for index, part in enumerate(parts)
+    )
+
+
 def bundle_cinemacc(
     dialogue: Path,
     translation: Path,
     output: Path,
     title: str | None = None,
+    year: int | None = None,
+    release: str | None = None,
+    dialogue_language: str | None = None,
+    translation_language: str | None = None,
+    dialogue_source: str | None = None,
+    translation_source: str | None = None,
     overwrite: bool = False,
 ) -> int:
     """Atomically build a deterministic two-track ZIP accepted by CinemaCC."""
@@ -1495,8 +1538,19 @@ def bundle_cinemacc(
         "translation": "translation.srt",
         "version": 1,
     }
-    if title and title.strip():
-        manifest["title"] = title.strip()
+    metadata = {
+        "title": bundle_metadata_text("title", title, 200),
+        "release": bundle_metadata_text("release", release, 240),
+        "dialogueLanguage": bundle_language("dialogue language", dialogue_language),
+        "translationLanguage": bundle_language("translation language", translation_language),
+        "dialogueSource": bundle_metadata_text("dialogue source", dialogue_source, 160),
+        "translationSource": bundle_metadata_text("translation source", translation_source, 160),
+    }
+    manifest.update({key: value for key, value in metadata.items() if value is not None})
+    if year is not None:
+        if year < 1800 or year > 2200:
+            raise ValueError("year must be between 1800 and 2200")
+        manifest["year"] = year
     entries = {
         "cinemacc.json": (
             json.dumps(manifest, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
@@ -1817,6 +1871,12 @@ def main(argv: list[str] | None = None) -> int:
     bundle_parser.add_argument("translation", type=Path)
     bundle_parser.add_argument("output", type=Path)
     bundle_parser.add_argument("--title")
+    bundle_parser.add_argument("--year", type=int)
+    bundle_parser.add_argument("--release")
+    bundle_parser.add_argument("--dialogue-language")
+    bundle_parser.add_argument("--translation-language")
+    bundle_parser.add_argument("--dialogue-source")
+    bundle_parser.add_argument("--translation-source")
     bundle_parser.add_argument("--overwrite", action="store_true")
 
     link_parser = sub.add_parser("cinemacc-link")
@@ -1910,6 +1970,12 @@ def main(argv: list[str] | None = None) -> int:
                 args.translation,
                 args.output,
                 args.title,
+                args.year,
+                args.release,
+                args.dialogue_language,
+                args.translation_language,
+                args.dialogue_source,
+                args.translation_source,
                 args.overwrite,
             )
         if args.command == "cinemacc-link":

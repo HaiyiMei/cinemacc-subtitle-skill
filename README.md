@@ -64,7 +64,7 @@ When only a title is supplied, the default route acquires and verifies a source,
 - deterministic cue, timestamp, formatting-tag, encoding, and newline checks;
 - audited pruning and sequential renumbering of confirmed non-program cue residue;
 - safe chunk splitting and merging for long subtitles;
-- deterministic two-track CinemaCC ZIP bundles and import-link formatting;
+- deterministic two-track CinemaCC ZIP bundles with movie, release, language, and source metadata;
 - atomic standalone-file delivery with hashes and receipts.
 
 ## Repository layout

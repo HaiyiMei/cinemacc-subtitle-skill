@@ -20,7 +20,12 @@ CinemaCC consumes one dialogue track and one translation track. After both pass 
 
 ```bash
 python3 "$TOOL" bundle-cinemacc refined.en.srt movie.zh-CN.srt \
-  movie.zh-CN.cinemacc.zip --title "Movie (2026)"
+  movie.zh-CN.cinemacc.zip \
+  --title "Movie" --year 2026 \
+  --release "Movie.2026.1080p.WEB-DL" \
+  --dialogue-language en --translation-language zh-CN \
+  --dialogue-source "OpenSubtitles file 123" \
+  --translation-source "CinemaCC Subtitle Skill"
 ```
 
 The command requires two non-empty SRTs with the same cue-number and timestamp skeleton. It preserves their bytes and writes exactly:
@@ -31,7 +36,27 @@ dialogue.srt
 translation.srt
 ```
 
+`cinemacc.json` keeps the version 1 core and adds optional, backward-compatible metadata:
+
+```json
+{
+  "format": "cinemacc-subtitles",
+  "version": 1,
+  "dialogue": "dialogue.srt",
+  "translation": "translation.srt",
+  "title": "Movie",
+  "year": 2026,
+  "release": "Movie.2026.1080p.WEB-DL",
+  "dialogueLanguage": "en",
+  "translationLanguage": "zh-CN",
+  "dialogueSource": "OpenSubtitles file 123",
+  "translationSource": "CinemaCC Subtitle Skill"
+}
+```
+
 Keep both standalone SRTs. A bundle holds one target language. If the job produces `zh-CN` and `zh-TW`, create two bundles rather than a three-track archive.
+
+Add only metadata supported by evidence. `title`, `year`, `release`, track languages, and short source labels appear in CinemaCC's import summary. Do not put signed URLs, credentials, display preferences, guessed offsets, or private job notes in the manifest.
 
 ## Create an import link only for a direct URL
 
