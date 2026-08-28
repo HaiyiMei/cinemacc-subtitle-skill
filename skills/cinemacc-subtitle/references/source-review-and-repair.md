@@ -18,7 +18,7 @@ Record the claimed language, observed language, and coverage as `full`, `partial
 
 An unexpected-language or partial track can be evidence, but it is not an eligible base for a deliverable advertised as a complete track in another language. Find a compatible track in the requested language, or obtain explicit permission to translate the actual language and disclose the coverage limit.
 
-Classify problems as structural, textual, coverage, or timing. Text repair does not fix missing dialogue or a release mismatch.
+Classify problems as structural, textual, segmentation, coverage, or timing. Text repair does not fix missing dialogue or a release mismatch.
 
 ## Prune confirmed non-program residue
 
@@ -60,6 +60,8 @@ For `different_timing_or_edit` or `insufficient_evidence`, locate lines manually
 
 Work cue by cue with neighboring context. Repair supported spelling, grammar, punctuation, casing, names, OCR or STT errors, and line layout. Preserve profanity, hesitation, repetition, fragments, ambiguity, interruptions, speaker distinctions, SDH meaning, and formatting tags. Keep each cue's meaning inside that cue. Never invent inaudible dialogue or reconstruct overwritten dialogue from a translated derivative alone.
 
+A preserved cue skeleton does not prove correct semantic segmentation. Detect meaning that drifted into a neighboring cue, duplicated across a boundary, disappeared between cues, or was completed in the wrong timestamp window. Repair every affected body in one contiguous window; do not patch only the most visible cue and leave neighboring duplication or omission. Keep the existing cue numbers and timestamps unless the user separately authorized structural edits.
+
 Record low-confidence readings outside the viewing text. After producing `refined.<source-tag>.srt`, audit and validate it against the cleaned source:
 
 ```bash
@@ -71,5 +73,7 @@ python3 "$TOOL" validate cleaned.srt refined.en.srt \
 ```
 
 Omit `--cross-reference` when no compatible reference exists. Do not enable the untranslated-English SDH scan for an English refined track.
+
+Each changed-cue record includes `change_group.changed_numbers` and `change_group.context`, with one unchanged read-only cue on each side. Review the context as one semantic window before accepting any boundary repair. When a workbook records a boundary repair, use the same `segmentation:<first>-<last>` prefix in the notes of every affected row and state whether the issue was drift, duplication, or omission.
 
 For a refine-only request, deliver the validated refined SRT and audit. For a translate-only request, do not rewrite the source; use the eligible supplied track as the approved source for the next stage.

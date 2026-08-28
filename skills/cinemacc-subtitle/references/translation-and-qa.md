@@ -29,6 +29,7 @@ Use `high`, `medium`, `low`, or `unreviewed` confidence. Keep uncertainty detail
 ## Translate from the approved source
 
 - Preserve cue identity, timestamp, fragments, ambiguity, pauses, interruptions, and tag sequence.
+- Keep each source cue's visible meaning in the corresponding target cue. Use adjacent cues to interpret context, not as a place to move inconvenient text.
 - Use glossary renderings consistently for names, titles, places, objects, and recurring phrases.
 - Write compact, natural theatrical subtitles rather than copying source syntax.
 - Translate SDH descriptions and speaker labels using target conventions.
@@ -44,7 +45,7 @@ Split long workbooks into disjoint ranges:
 python3 "$TOOL" split-workbook work/subtitle-job work/subtitle-chunks --size 150
 ```
 
-Give every range the same context pack and glossary. Adjacent cues are read-only context. Never let workers edit overlapping rows. The main agent owns glossary changes, cross-range consistency, uncertainty resolution, and final QA.
+Give every range the same context pack and glossary. Adjacent cues are read-only context. Never let workers edit overlapping rows. The main agent owns glossary changes, semantic boundary review across chunk edges, cross-range consistency, uncertainty resolution, and final QA.
 
 Merge completed ranges deterministically:
 
@@ -82,6 +83,6 @@ Default review thresholds are:
 
 CPS counts visible Unicode code points excluding whitespace. A short timing window does not authorize retiming or content deletion. Pass project-specific Latin tokens with repeated `--allowed-latin`.
 
-Fix every structural error. Resolve every warning, including `ellipsis_run`, or record a narrow waiver by profile, cue, and warning kind. Structural errors are never waivable. Review the beginning, middle, end, chunk boundaries, named-entity scenes, contaminated cues, and each uncertainty.
+Fix every structural error. Resolve every warning, including `ellipsis_run`, or record a narrow waiver by profile, cue, and warning kind. Structural errors are never waivable. Run `review` against the provider baseline or prior approved track and inspect every `change_group.context` for neighboring-cue drift, duplication, and omission. Also review the beginning, middle, end, chunk boundaries, named-entity scenes, contaminated cues, and each uncertainty.
 
 The separate `validate` command is structural by default. Use `--scan-untranslated-english-sdh` only for a non-English translated target.
