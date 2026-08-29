@@ -398,6 +398,38 @@ class SrtToolsTests(unittest.TestCase):
             self.assertEqual(records[0]["candidate_lines"], ["Hello"])
             self.assertEqual(records[0]["references"][0]["number"], 9)
 
+    def test_review_groups_adjacent_changes_with_read_only_boundary_context(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            source = root / "source.srt"
+            candidate = root / "candidate.srt"
+            output = root / "review.jsonl"
+            cues = [
+                (1, "00:00:00,000 --> 00:00:01,000", ["Before"]),
+                (2, "00:00:01,000 --> 00:00:02,000", ["Old middle one"]),
+                (3, "00:00:02,000 --> 00:00:03,000", ["Old middle two"]),
+                (4, "00:00:03,000 --> 00:00:04,000", ["After"]),
+            ]
+            srt_tools.write_srt(source, cues)
+            srt_tools.write_srt(
+                candidate,
+                [cues[0], (2, cues[1][1], ["New middle one"]), (3, cues[2][1], ["New middle two"]), cues[3]],
+            )
+
+            self.assertEqual(srt_tools.review(source, candidate, output, None), 0)
+            records = [json.loads(line) for line in output.read_text().splitlines()]
+            self.assertEqual(len(records), 2)
+            for record in records:
+                self.assertEqual(record["change_group"]["changed_numbers"], [2, 3])
+                self.assertEqual(
+                    [context["number"] for context in record["change_group"]["context"]],
+                    [1, 2, 3, 4],
+                )
+                self.assertEqual(
+                    [context["changed"] for context in record["change_group"]["context"]],
+                    [False, True, True, False],
+                )
+
     def test_review_rejects_an_srt_as_cross_reference_jsonl(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)

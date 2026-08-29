@@ -4,6 +4,20 @@ All notable changes to this repository are documented here. The project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). The version in
 `SKILL.md` (`metadata.version`) is authoritative; every plugin manifest mirrors it.
 
+## [0.6.0] - 2026-08-29
+
+### Added
+
+- Semantic cue-boundary guidance that treats neighboring-cue drift, duplication, and omission as one
+  contiguous repair window while preserving the existing cue skeleton.
+- `change_group` evidence in changed-cue review JSONL, including consecutive changed cue numbers and
+  one read-only context cue on each side so partial boundary repairs are visible before delivery.
+
+### Changed
+
+- Translation and QA guidance now requires every changed cue group and chunk boundary to be reviewed
+  for timestamp-local meaning, not only structural validity and per-cue wording.
+
 ## [0.5.0] - 2026-08-26
 
 ### Added

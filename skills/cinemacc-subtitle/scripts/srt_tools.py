@@ -1045,10 +1045,53 @@ def review(
                 )
             references[int(record["source_number"])] = record_references
 
+    changed_indexes = [
+        index
+        for index, (source_cue, candidate_cue) in enumerate(
+            zip(source_cues, candidate_cues, strict=True)
+        )
+        if source_cue[2] != candidate_cue[2]
+    ]
+    changed_groups: list[list[int]] = []
+    for index in changed_indexes:
+        if changed_groups and index == changed_groups[-1][-1] + 1:
+            changed_groups[-1].append(index)
+        else:
+            changed_groups.append([index])
+    group_by_index: dict[int, dict[str, object]] = {}
+    for indexes in changed_groups:
+        context_start = max(0, indexes[0] - 1)
+        context_end = min(len(source_cues), indexes[-1] + 2)
+        changed_numbers = [source_cues[index][0] for index in indexes]
+        context = []
+        for index in range(context_start, context_end):
+            number, timestamp, source_lines = source_cues[index]
+            candidate_lines = candidate_cues[index][2]
+            context.append(
+                {
+                    "number": number,
+                    "timestamp": timestamp,
+                    "source_lines": source_lines,
+                    "candidate_lines": candidate_lines,
+                    "changed": index in indexes,
+                    "references": references.get(number, []),
+                }
+            )
+        group = {
+            "first_number": changed_numbers[0],
+            "last_number": changed_numbers[-1],
+            "changed_numbers": changed_numbers,
+            "context": context,
+        }
+        for index in indexes:
+            group_by_index[index] = group
+
     output.parent.mkdir(parents=True, exist_ok=True)
     changed = 0
     with output.open("w", encoding="utf-8") as handle:
-        for source_cue, candidate_cue in zip(source_cues, candidate_cues, strict=True):
+        for index, (source_cue, candidate_cue) in enumerate(
+            zip(source_cues, candidate_cues, strict=True)
+        ):
             number, timestamp, source_lines = source_cue
             _, _, candidate_lines = candidate_cue
             if source_lines == candidate_lines:
@@ -1062,6 +1105,7 @@ def review(
                         "source_lines": source_lines,
                         "candidate_lines": candidate_lines,
                         "references": references.get(number, []),
+                        "change_group": group_by_index[index],
                     },
                     ensure_ascii=False,
                 )
@@ -1070,6 +1114,7 @@ def review(
 
     print(f"source cues: {len(source_cues)}")
     print(f"changed cue bodies: {changed}")
+    print(f"changed cue groups: {len(changed_groups)}")
     print(f"wrote: {output}")
     return 0
 
