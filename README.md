@@ -2,9 +2,19 @@
 
 [![skills.sh](https://skills.sh/b/HaiyiMei/cinemacc-subtitle-skill)](https://skills.sh/HaiyiMei/cinemacc-subtitle-skill)
 
-An open, auditable Agent Skill for finding or using a source SRT, repairing, translating, validating, and packaging movie or TV subtitles without silently changing cue timing.
+An open-source Agent Skill for researching, repairing, translating and checking SRT subtitles. It prepares files for CinemaCC or another subtitle player while preserving cue timing unless a change is explicitly authorized.
 
-The skill keeps semantic decisions with the agent or human reviewer and delegates snapshots, hashes, source comparison, chunking, assembly, structural QA, CinemaCC bundles, and atomic delivery to a deterministic Python tool.
+## Why we built it
+
+A subtitle translation can read well line by line and still be confusing across a whole film. While preparing Project Hail Mary subtitles, we found that Petrova line switched Chinese transliterations partway through the file. Astrophage also appeared under two different Chinese terms.
+
+Context caused another kind of mistake in an Odyssey subtitle task: Hades referred to the underworld in the passage, but was translated as the god's name. Mentor was a character, but became the ordinary word for an adviser. Valid timestamps would not tell us any of that was wrong.
+
+The Skill starts with research. The agent records character identities, relationships, places and recurring terms in a context file and glossary, then uses the same notes for every chunk. Locale choices belong there too: Mainland Chinese 蜘蛛侠 and Taiwan Chinese 蜘蛛人 are both Spider-Man, but character conversion alone will not choose the right name.
+
+The agent handles source repair and translation decisions. Python scripts handle source snapshots, chunk assembly and checks for cue numbering, timestamps, tags and file structure. Uncertain readings remain visible for review. Passing those checks proves structural properties, not translation quality.
+
+Read the [background and examples](https://cinemacc.net/guides/cinemacc-subtitle-skill), or install the Skill below.
 
 ## Install
 
